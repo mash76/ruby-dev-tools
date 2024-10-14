@@ -607,6 +607,31 @@ end
 main
 
 
+# CREATE TABLE books (
+#     g_book_id TEXT PRIMARY KEY,
+#     title TEXT,
+#     desc TEXT,
+#     authors TEXT,
+#     publisher TEXT,
+#     published TEXT,
+#     language TEXT,
+#     price REAL,
+#     pages INTEGER,
+#     isbn_10 INTEGER,
+#     isbn_13 INTEGER,
+#     created TEXT,
+#     updated TEXT
+# )
+# CREATE TABLE api_calls (
+#     id INTEGER PRIMARY KEY,
+#     keyword TEXT,
+#     page INTEGER,
+#     url TEXT,
+#     result_json TEXT,
+#     created TEXT,
+#     updated TEXT
+# )
+
 
 =begin
 

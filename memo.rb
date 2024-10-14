@@ -180,3 +180,12 @@ end
 
 
 main
+
+
+# CREATE TABLE memos (
+#     id INTEGER PRIMARY KEY,
+#     title TEXT,
+#     text TEXT,
+#     created_at TEXT,
+#     updated_at TEXT
+#   )

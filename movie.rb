@@ -907,3 +907,42 @@ def wordList
 end
 
 main
+
+
+
+# CREATE TABLE "movies" (
+# 	"inode"	INTEGER,
+# 	"filepath"	TEXT,
+# 	"is_local"	TEXT,
+# 	"is_local_checked"	TEXT,
+# 	"meta_scan_date"	TEXT,
+# 	"streams"	INTEGER,
+# 	"chapters"	INTEGER,
+# 	"v_codec"	TEXT,
+# 	"v_tag"	INTEGER,
+# 	"width"	INTEGER,
+# 	"height"	INTEGER,
+# 	"fps"	TEXT,
+# 	"duration"	REAL,
+# 	"minutes"	INTEGER,
+# 	"v_bit_rate"	INTEGER,
+# 	"a_codec"	TEXT,
+# 	"a_tag"	TEXT,
+# 	"sample_rate"	INTEGER,
+# 	"channels"	INTEGER,
+# 	"channel_layout"	TEXT,
+# 	"a_bit_rate"	INTEGER,
+# 	"filesize"	INTEGER,
+# 	"filesize_mb"	INTEGER,
+# 	"ctime"	INTEGER,
+# 	"mtime"	INTEGER,
+# 	"atime"	INTEGER,
+# 	"view_times"	INTEGER NOT NULL DEFAULT 0,
+# 	"last_view_date"	TEXT,
+# 	"created"	TEXT,
+# 	PRIMARY KEY("inode")
+# )
+# CREATE TABLE "key_values" (
+# 	"key"	TEXT NOT NULL UNIQUE,
+# 	"value"	TEXT
+# )

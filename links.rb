@@ -386,3 +386,32 @@ end
 
 
 main
+
+
+# CREATE TABLE "cate1" (
+# 	"id"	INTEGER,
+# 	"name"	TEXT NOT NULL UNIQUE,
+# 	"sort_order"	INTEGER NOT NULL DEFAULT 0,
+# 	"is_disp"	INTEGER NOT NULL DEFAULT 1,
+# 	"created"	TEXT,
+# 	PRIMARY KEY("id")
+# )
+# CREATE TABLE "cate2" (
+# 	"id"	INTEGER NOT NULL,
+# 	"cate1_id"	INTEGER NOT NULL,
+# 	"name"	TEXT NOT NULL,
+# 	PRIMARY KEY("id")
+# )
+# CREATE TABLE "links" (
+# 	"id"	INTEGER NOT NULL,
+# 	"cate1"	INTEGER,
+# 	"cate2"	INTEGER,
+# 	"name"	TEXT NOT NULL,
+# 	"shortcut"	TEXT,
+# 	"href"	TEXT NOT NULL,
+# 	"use_count"	INTEGER NOT NULL DEFAULT 0,
+# 	"last_use_date"	TEXT,
+# 	"created_at"	TEXT,
+# 	"updated_at"	TEXT,
+# 	PRIMARY KEY("id")
+# )

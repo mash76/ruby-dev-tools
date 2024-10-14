@@ -106,6 +106,12 @@ def v_db_detail(p,db,sqlite_path)
 
     tables2 = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='table' ",db)
     out br
+
+    tables = sqlite2hash("SELECT type,name,'' cols,'' rows,rootpage,sql FROM sqlite_master WHERE type='table' ",db,NO_DISP)
+    tables.each do |row|
+        out '<pre>' + row['sql'] + '</pre>'
+    end
+
     # tables2.each do |row|
     #     out sBlue(row['name']) + spc
     #     sql = "PRAGMA table_info(" + row['name'] + ")"

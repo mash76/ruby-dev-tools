@@ -273,3 +273,17 @@ end
 
 
 main
+
+
+
+# CREATE TABLE "pdf" (
+# 	"inode"	INTEGER NOT NULL,
+# 	"file_name"	INTEGER,
+# 	"json"	TEXT,
+# 	"chapter_csv"	TEXT,
+# 	"view_count"	INTEGER NOT NULL DEFAULT 0,
+# 	"last_view_date"	TEXT,
+# 	"created_at"	TEXT,
+# 	"updated_at"	TEXT,
+# 	PRIMARY KEY("inode")
+# )
