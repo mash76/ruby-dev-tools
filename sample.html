@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>URLショートカットのドラッグ＆ドロップ</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #drop-area {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="drop-area">ここにURLをドロップ</div>
+    <p id="url-display"></p>
+    <p id="name-display"></p>
+
+    <script>
+        $(document).ready(function() {
+
+            $('#drop-area').on('dragenter dragover', function(e) {
+                e.preventDefault()
+                e.stopPropagation()
+                $(this).css('border-color', 'blue')
+            })
+
+            $('#drop-area').on('dragleave', function(e) {
+                e.preventDefault()
+                e.stopPropagation()
+                $(this).css('border-color', 'black')
+            })
+
+            $('#drop-area').on('drop', function(e) {
+                e.preventDefault()
+                e.stopPropagation()
+                $(this).css('border-color', 'black')
+
+                var url = e.originalEvent.dataTransfer.getData('text/uri-list')
+                if (url) {
+                    $('#url-display').text('ドロップされたURL: ' + url)
+                } else {
+                    $('#url-display').text('有効なURLではありません。')
+                }
+
+                var name = e.originalEvent.dataTransfer.getData('text/html')
+                if (name) {
+                    $('#name-display').text('ドロップされたname: ' + url)
+                } else {
+                    $('#name-display').text('有効なnameではありません。')
+                }
+
+            })
+        })
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+files/*
+assets/*
+cache/*
+docker/*
+_info.rb

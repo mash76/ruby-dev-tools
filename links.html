@@ -1,0 +1,384 @@
+<!-- 入力表示ウィンドウ -->
+<div id="enter_area"
+            style="position:fixed; width:600px;
+                opacity:0.9; top:200px; left:400px;
+                border-radius:20px;
+                padding:15px;">
+    <div id="input_words" style="font-size:400%; "></div>
+    <table>
+        <tr>
+            <td id="kouho_shortcuts" style="font-size:150%; color:gray; "></td>
+            <td id="kouho_names" style="font-size:150%; "></td>
+        </tr>
+    </table>
+</div>
+
+<div id="add_cate2" style="
+    position:fixed; top:100px; left:100;
+    padding: 30px;
+    opacity:0.9;
+    border-radius:20px;
+    border:1px solid silver;
+    color:gray; font-size:80%;
+    display:none;
+    ">
+    <form id="f1"></form>
+        cate1<input id="cate1" type='text' name='cate1' ><br/>
+        cate2<input id="cate2" type='text' name='caet2' >
+        <input type="submit" onclick="submitAddCate2( $('#cate1').val(), $('#cate2').val())">
+    </form>
+
+</div>
+
+<div id="debug_log" style="position:fixed;
+    top:100px; left:1000px;
+    width:300px; height:600px;
+    background: white;  opacity:0.7;
+    border:1px solid silver;
+    color:gray; font-size:80%;
+    "></div>
+
+<script>
+
+    let ST = {}
+    ST.chars = ""
+    ST.kouho_ids = []
+    ST.is_input_allow = true
+    ST.drag_id = null
+    ST.drag_tag  = null
+
+    let LOG_TEXTS = []
+    const LOG_MAX = 20
+    const ENTER_AREA_COLOR = '#f4f4f4'// '#f0f0f0'
+    const NEXT_EDIT_MODE = (window.location.href.includes('edit=on')) ? 'off' : 'on'
+
+    $(document).ready(function() {
+        // inpu
+        eventInputs()
+
+        eventCate1Drag()
+        eventADragStart()
+        eventClick()
+
+        // drop
+        eventGomibakos()
+        eventNewLink()
+        eventLinkMove()
+
+        eventLogWindow()
+        // 初回
+        resizeLogWin()
+    })
+
+    function showAddCate2Form(cate1_name){
+
+        $('#cate1').val(cate1_name)
+        $('#add_cate2').show()
+        $('#cate2').focus()
+    }
+
+    function submitAddCate2(cate1_id,cate2_name){
+        const ajax_url = '?ajax=add_cate2&cat1_id=' + cate1_id + '&cate2_name=' + cate2_name
+        clog(ajax_url)
+        $.get(ajax_url)
+
+    }
+
+    function sBase(str,style) { return '<span style="' + style + '">' + str + '</span>' }
+    function sBlue(str) { return sBase(str,'color:blue;')  }
+
+    function clog(str){
+
+        global_vals = sBlue('ST') + '<br/>'
+        $.each(ST, function(key, value) {
+            global_vals += ' &nbsp; ' + sBlue(key) + " " + value + '<br/>'
+        })
+        global_vals += '<hr/>'
+
+        LOG_TEXTS.push(str)
+        if (LOG_TEXTS.length > LOG_MAX){ LOG_TEXTS.splice(0, LOG_TEXTS.length - LOG_MAX) } // 先頭の4要素を削除
+        $('#debug_log').html(global_vals + LOG_TEXTS.join('<br>'))
+    }
+    function eventLogWindow(){
+        $(window).resize(() => { resizeLogWin() })
+    }
+    function resizeLogWin(){
+        let width = $(window).width()
+        $('#debug_log').css('left',width - 350)
+
+    }
+
+    function eventGomibakos(){
+
+        // url-delete drop area
+        $('#gomibako-area').on('dragenter', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+            if (ST.drag_tag != "a") { return }
+            clog('gomi dragenter : ' + ST.drag_tag + ' ' + ST.drag_id  )
+            $(this).css('border-color', 'red')
+            $(this).css('background', '#fee')
+        })
+        $('#gomibako-area').on('dragover', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+        })
+
+        $('#gomibako-area').on('dragleave', function(e) {
+            if (ST.drag_tag != "a") { return }
+            clog('gomi dragleave : ' + ST.drag_tag + ' ' + ST.drag_id  )
+            e.preventDefault()
+            e.stopPropagation()
+            $(this).css('border-color', 'black')
+            $(this).css('background', '')
+        })
+
+        $('#gomibako-area').on('drop', function(e) {
+            clog('gomi drop : ' + ST.drag_tag + ' ' + ST.drag_id  )
+            if (ST.drag_tag != "a") { return}
+            e.preventDefault()
+            e.stopPropagation()
+            $(this).css('border-color', 'black')
+            $(this).css('background', '')
+
+            var url = e.originalEvent.dataTransfer.getData('text/uri-list')
+            let id = e.originalEvent.dataTransfer.getData('id')
+            if (ST.drag_tag == 'a') {
+                const ajax_url = '?ajax=del&id=' + id
+                clog('ajax ' + ajax_url)
+                $.get(ajax_url)
+                $('#' + id).remove()
+            }
+            ST.drag_tag = null
+        })
+    }
+
+
+    function eventNewLink(){
+        // url-add drop area
+        $('#drop-area').on('dragenter', function(e) {
+            if (drag_tag)
+            e.preventDefault()
+            e.stopPropagation()
+            clog('new drag-enter')
+            $(this).css('border-color', 'blue').css('background', '#eef')
+        })
+        $('#drop-area').on('dragover', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+        })
+
+        $('#drop-area').on('dragleave', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+            clog('new drag-leave')
+            $(this).css('border-color', 'black').css('background', '')
+        })
+        $('#drop-area').on('drop', function(e) {
+            clog('new drop ' )
+            e.preventDefault()
+            e.stopPropagation()
+            $(this).css('border-color', 'black').css('background', '')
+
+            const url = e.originalEvent.dataTransfer.getData('text/uri-list')
+            if (url) {
+                $.get('?ajax=add&href=' + encodeURIComponent(url))
+            }
+        })
+    }
+
+    function eventClick(){
+        $("a[sc]").click( (e) => {
+            event.preventDefault();  // デフォルトのリンク遷移を一時的に無効化
+            ST.drag_id = $(e.target).attr("id")
+            ajaxCountUp(ST.drag_id)
+            window.location.href = $(e.target).attr("href")
+        })
+    }
+
+    function eventCate1Drag(){
+
+        $('div[draggable]').on("dragstart",(e) => {
+            ST.drag_tag = 'a'
+            ST.drag_id = e.target.id
+            e.originalEvent.dataTransfer.setData('id', ST.drag_id);
+            clog("div drag-start : " + ST.drag_tag + ' ' + ST.drag_id + ' ' + $(e.target).html() )
+        })
+
+    }
+
+    // ドラッグ開始イベント
+    function eventADragStart(){
+        // scつきaタグ クリック処理 ------------------
+        $('a[draggable]').on("dragstart",(e) => {
+            ST.drag_tag = 'a'
+            ST.drag_id = e.target.id
+            e.originalEvent.dataTransfer.setData('id', ST.drag_id);
+            clog("drag-start : " + ST.drag_tag + ' ' + ST.drag_id + ' ' + $(e.target).html() )
+        })
+        $('a[draggable]').on("dragend",(e) => {
+            clog("drag-end : " + ST.drag_tag + ' ' + ST.drag_id + ' ' + $(e.target).html() )
+            // ST.drag_tag = 'a'
+            // ST.drag_id = e.target.id
+        })
+    }
+
+    // リンク移動イベント
+    function eventLinkMove(){
+
+        // aタグのdragdrop処理 ---------------------------
+
+        // a タグをドラッグ開始
+        let droparea_col = '#eee'
+
+        // ドラッグ可能div 色変え divにaタグを落としたとき
+        $('div[cate2]').on('dragenter ', (e) =>  {
+            e.preventDefault()
+            $(e.target).css('background',droparea_col)
+            clog("move drag-enter")
+        })
+        $('div[cate2]').on('dragover', (e) =>  {
+            e.preventDefault()
+        })
+        $('div[cate2]').on('dragleave', (e) => {
+            if (e.target.tagName == 'A') { return }
+            e.preventDefault()
+            $(e.target).css('background','')
+            clog("move drag-leave : " + ST.drag_tag + ' ' + ST.drag_id + ' : div ' + $(e.target).attr('cate1') + ' ' + $(e.target).attr('cate2') + ' ' + e.target.tagName)
+        })
+        // ドロップ時 カテゴリ1,2をつけかえ -----------
+        $('div[cate2]').on('drop', function(e) {
+            clog("move drop : " + ST.drag_tag + ' ' + ST.drag_id + ' : div ' + $(e.target).attr('cate1') + ' ' + $(e.target).attr('cate2'))
+            e.preventDefault()
+            e.stopPropagation()
+            let drop_to = $(e.target)
+            if (e.target.tagName === 'A') {
+                drop_to = drop_to.closest('div[cate2]')
+            }
+            let dropped_elem = $('#' + ST.drag_id)
+            drop_to.append(dropped_elem) // htmlとして追加
+            ajaxChangeLinkCate(ST.drag_id, drop_to.attr('cate1'), drop_to.attr('cate2') )
+        })
+    }
+
+    function eventInputs(){
+        // ショートカットキー
+        $(document).keydown(function(e){
+           // tabで切り替え   escapeや shift + e はなぜか効きにくい
+           if ( e.key == 'Tab') {
+                window.location.href = '?view=links&edit=' + NEXT_EDIT_MODE
+                return
+           }
+           if ( e.key == 'D' && e.shiftKey) {
+                $('#debug_log').toggle()
+                return
+           }
+
+            //enter マッチあれば1番目を開く、マッチなければ入力リセット
+            if (e.key === 'Enter' ) {
+
+                // マッチがなければ入力リセット
+                if (ST.kouho_ids.length == 0) {
+                    ST.chars = ""
+                    ST.is_input_allow = true
+                    dispInputs()
+                    return
+                }
+                // 複数候補があれば、1件目に遷移
+                if (ST.kouho_ids.length > 1) {
+                    openUrl(ST.kouho_ids[0])
+                    ST.chars = ""
+                }
+            }else{
+                // 通常入力
+                if (ST.is_input_allow){
+                    ST.chars += String.fromCodePoint(e.which).toLowerCase()
+                }
+            }
+
+           if (e.metaKey || e.shiftKey || e.key == 'Tab') return
+
+           ST.kouho_ids = []
+
+            // 入力と候補をマッチ
+            $('a[sc]').each(function(ind,obj){
+                let sc_str_lower = $(obj).attr('sc').toLowerCase()
+                if (ST.chars && ST.chars == sc_str_lower.slice(0, ST.chars.length)) { // 入力文字数分でマッチ
+                    ST.kouho_ids.push($(obj).attr('id'))
+                }else{
+                    $(obj).css('border','').css('background','')
+                }
+            })
+            clog(e.key + ' ' + ST.chars + ' 候補' + ST.kouho_ids.length)
+            ST.kouho_ids = ST.kouho_ids.sort((a, b) => $('#' + b).attr('last_use_date') - $('#' + a).attr('last_use_date'));
+
+            dispInputs() //入力状況表示
+
+            // 1件に絞れていたら 遷移
+            if (ST.kouho_ids.length == 1) openUrl(ST.kouho_ids[0])
+            if (ST.kouho_ids.length == 0) ST.is_input_allow = false
+        })
+    }
+
+
+    // 入力中文字列と候補リストを表示
+    function dispInputs(){
+
+        // 一文字でも入力あれば入力エリア表示
+        if (ST.chars.length == 0 ) {
+            $('#enter_area').css('display','none')
+        }else{
+            $('#enter_area').css('display','block')
+        }
+        // マッチなければ背景を赤
+        $('#input_words').html(ST.chars );
+        if (ST.kouho_ids.length == 0 ) {
+
+            $('#enter_area').css('background','red').css('color','white')
+
+        }else{
+            $('#enter_area').css('background',ENTER_AREA_COLOR).css('color','')
+        }
+
+        let kouho_names = []
+        let kouho_shortcuts = []
+        ST.kouho_ids.forEach((id) => {
+            let obj = $('#' + id)
+            let sc_str_lower = $(obj).attr('sc').toLowerCase()
+            $(obj).css('border','1px solid red').css('background','#fff8f8') // 枠線
+            kouho_names.push($(obj).text())
+            kouho_shortcuts.push( kouho_names.length  + ' ' + sc_str_lower.replace(ST.chars,'<b>' + ST.chars + '</b>') + '&nbsp;&nbsp;')
+        })
+        $('#kouho_names').html(kouho_names.join('<br/>'))
+        $('#kouho_shortcuts').html(kouho_shortcuts.join('<br/>'))
+    }
+
+    function openUrl(id){
+        ST.chars = ''
+        ST.is_input_allow = true
+        ajaxCountUp(id)
+        $("#enter_area").css('background','orange')
+        // appやdirはajaxで
+        let href_str = $("#" + id).attr('href')
+        // appやdirはajaxで
+        if (href_str.includes('?ajax=runapp')  || href_str.includes('?ajax=open') ){
+            clog('ajax ' + href_str)
+            $.get(href_str)
+        }else{
+            window.open(href_str, '_blank')
+        }
+    }
+
+    // 飛ぶ前にリンク利用記録を更新
+    function ajaxCountUp(id){
+        let url = "?ajax=count_up&id=" + id
+        clog('ajax ' + url)
+        $.get(url)
+    }
+    function ajaxChangeLinkCate(id,cate1,cate2){
+        let url = "?ajax=change_cate&id=" + id + "&cate1=" + cate1 + "&cate2=" + cate2
+        clog(url)
+        $.get(url )
+    }
+
+</script>

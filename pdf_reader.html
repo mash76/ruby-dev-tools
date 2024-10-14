@@ -1,0 +1,343 @@
+
+<div id="navi_window"
+    style="position:fixed; top:-8px; left: -8px; width:103%; height:103%;
+            background-color: rgba(50, 50, 50, 0.6);
+            display:none;">
+
+    <div id="navi_contents" style="position:relative; top:20px;left:20px; width:93%;
+                padding: 15px; background:#fff; border-radius:10px;
+                opacity: 1;
+                vertical-align:top;
+                ">
+    </div>
+
+
+</div>
+
+<div id="debug_log" style="position:fixed;
+                top:20px; left:1100px;
+                width:300px; height:600px;
+                background: white;  opacity:0.7;
+                border:1px solid silver;
+                color:gray; font-size:80%;
+                display:none;
+                "></div>
+
+<script>
+    let ST = {"reverse" : false ,"click_page" : "null" , "img_per_screen" : 3}
+    const WIDTH_MAP = { '1': '100px', '2': '200px', '3': '300px',
+                        '4':'400px','5':'500px','6':'650px', '7':'800px', '8':'1000px' }
+
+    let LOG_TEXTS = []
+    const LOG_MAX = 20
+    // 1,2,3押したら拡大率変更
+    $(document).keydown((e) => {
+        const key = e.key
+        clog('key ' + key + ' ' + e.which)
+
+        if (e.shiftKey || e.metaKey) return // com r などブラウザ規定のショートカットを生かす
+
+        if (e.which != 32){
+            if (!isNaN(Number(e.key))) {
+                ST.img_per_screen = Number(e.key)
+                zoomChange(key)
+                saveST()
+                return
+            }
+        }
+
+
+        if (key == 'Tab'){
+            $('#navi_window').toggle()
+            clog('debug display ' + $('#navi_window').css('display'))
+        }
+
+        if (key == 'd')  toggleDebug()
+        if (key == 'r') toggleReverse()
+
+        if (ST.click_page == "null") {
+            saveST()
+            refresh()
+            return
+        }
+
+        // memo
+        if (key == 'm'){
+            if (!ST.memo) ST.memo = {}
+            if (ST.click_page in ST.memo) {
+                delete ST.memo[ST.click_page]
+            }else{
+                ST.memo[ST.click_page] = "name"
+            }
+        }
+        // C チャプター設定
+        if (key == 'c'){
+            clog('chapter set')
+            if (!ST.chapter) ST.chapter = {}
+            if (ST.click_page in ST.chapter) {
+                clog('del ' + ST.click_page)
+                delete ST.chapter[ST.click_page]
+            }else{
+                clog('add ' + ST.click_page)
+                ST.chapter[ST.click_page] = "name"
+            }
+        }
+
+        refreshViewImg()
+        if (key == ' '){
+            e.preventDefault()
+            e.stopPropagation()
+            const max_view_page = Math.max(...ST.view_images.map(Number))
+            moveToPage(max_view_page + 1)
+        }
+        if (key == 'ArrowRight'){
+            if (ST.reverse == true) {
+                const min_view_page = Math.min(...ST.view_images.map(Number))
+                moveToPage(min_view_page - 1)
+            }else{
+                const max_view_page = Math.max(...ST.view_images.map(Number))
+                moveToPage(max_view_page + 1)
+            }
+        }
+        if (key == 'ArrowLeft' ){
+            if (ST.reverse == true) {
+                const max_view_page = Math.max(...ST.view_images.map(Number))
+                next_page = max_view_page + 1
+            }else{
+                const min_view_page = Math.min(...ST.view_images.map(Number))
+                next_page = min_view_page - 1
+            }
+            moveToPage(next_page)
+        }
+        if (key == 'ArrowUp'){
+            e.preventDefault()
+            e.stopPropagation()
+                const min_view_page = Math.min(...ST.view_images.map(Number))
+               // next_page = min_view_page - 1
+                next_page = getPreChapterPage(min_view_page)
+                ST.click_page = next_page
+            moveToPage(next_page)
+        }
+        if (key == 'ArrowDown' ){  // space
+            clog('space')
+            e.preventDefault()
+            e.stopPropagation()
+            const max_view_page = Math.max(...ST.view_images.map(Number))
+                //next_page = max_view_page + 1
+            next_page = getNextChapterPage(max_view_page)
+            ST.click_page = next_page
+            moveToPage(next_page)
+        }
+
+        console.log('ST',ST)
+        saveST()
+        refresh()
+
+    })
+
+    function getPreChapterPage(page){
+        let keys = Object.keys(ST.chapter)
+        const maxUnderNowPage = Math.max(...keys.filter(num => num < page));
+        return maxUnderNowPage
+    }
+    function getNextChapterPage(page){
+        let keys = Object.keys(ST.chapter)
+        const minOverNowPage = Math.min(...keys.filter(num => num > page));
+        return minOverNowPage
+    }
+
+    function moveToPage(pagenum){
+
+        element = $('div[id=page_div_' + String(pagenum).padStart(3, '0')  + ']')
+            $('html, body').animate({
+                scrollTop: element.offset().top
+            }, 100, function(){  refresh()    }) // 1000ミリ秒（1秒）のアニメーション
+    }
+
+    function toggleReverse(){
+        ST.reverse = !ST.reverse
+    }
+    function toggleDebug(){
+        $('#debug_log').toggle()
+    }
+
+
+    function refresh() {
+        clog('refresh ' + getHHIISS())
+
+        // ページのラベル
+        $('span[type=page_label]' ).html('')
+        for (const key in ST.chapter) {
+            $('#page_label_' + key ).append(sRed(' chap'))
+        }
+        for (const key in ST.memo) {
+            $('#page_label_' + key ).append(sBlue(' memo'))
+        }
+
+        let path = '/pdf_pages/' + INO + '/'
+        let html = ''
+        if (ST.chapter) {
+
+            // ファイル名
+            html += '<div style="font-size:120%; color: #444; padding-bottom:8px;">' + FILE_NAME + '</div> '
+
+            // ナビchapterファイル
+            html += '<div id="navi_pages" class="flex-container">'
+            let chapters = Object.keys(ST.chapter).sort((a, b) => parseInt(a) - parseInt(b))
+            for (const key of chapters) {
+                html += '<div class="flex-item">'
+                html += `<img type="navi_img" pagenum="${key}" style="border:1px solid silver; " width="130
+                px;" src="${path}thumb_${key}.jpg" alt="Title page">`
+                html += '</div>'
+            }
+            html += '</div>'
+        }
+        $('#navi_contents').html(html)
+
+        $('img[type=page]').css('border','1px solid silver')
+        $('img[id=' + String(ST.click_page).padStart(3, '0') + ']').css('border','3px solid #444')
+
+        // ページのdivの外順を右からに
+        let revers_style= ''
+        if (ST.reverse == true) revers_style = 'row-reverse'
+        $('#pages').css('flex-direction',revers_style)
+        $('#navi_pages').css('flex-direction',revers_style)
+
+        refreshViewImg()
+    }
+
+    function refreshViewImg(){
+        // 現在画面に入っているimgタグを把握
+        let view_images = []
+        $('img[type=page]').each((i,e) => {
+            if (isInViewport(e)) {
+                view_images.push( $(e).attr('id') )
+            }
+        })
+        ST.view_images = view_images
+        clog('refreshViewImg' + view_images.join(','))
+    }
+
+    // 要素がビューポートにあるかを確認する関数
+    function isInViewport(element) {
+        var rect = element.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+
+    function saveST() {
+        delete ST.index; delete ST.title; delete ST.okuduke;delete ST.sakuin;
+
+        const jsonString = JSON.stringify(ST)
+        const urlEncoded = encodeURIComponent(jsonString)
+        let url = '?ajax=save&ino=' + INO + '&json=' + urlEncoded
+        $.get(url)
+        clog("save " + url)
+
+    }
+
+    function sBase(str,style) { return '<span style="' + style + '">' + str + '</span>' }
+    function sBlue(str) { return sBase(str,'color:blue;')  }
+    function sRed(str) { return sBase(str,'color:red;')  }
+    function clog(str){
+
+        global_vals = sBlue('ST') + '<br/>'
+        $.each(ST, function(key, value) {
+            valstr = JSON.stringify(value)
+            global_vals += ' &nbsp; ' + sBlue(key) + " " + valstr + '<br/>'
+        })
+        global_vals += '<hr/>'
+
+        LOG_TEXTS.push(str)
+        if (LOG_TEXTS.length > LOG_MAX){ LOG_TEXTS.splice(0, LOG_TEXTS.length - LOG_MAX) } // 先頭の4要素を削除
+        $('#debug_log').html(global_vals + LOG_TEXTS.join('<br>'))
+
+    }
+
+    function eventResize(){
+
+        clog('resize  ' + $(window).width())
+        $(window).resize(() => { resizeWin() })
+    }
+    function resizeWin(){
+
+        let width = $(window).width()
+        clog('resize window.width ' + width)
+        $('#debug_log').css('left',width - 350)
+        zoomChange(ST.img_per_screen)
+        refresh()
+
+    }
+
+    // 数字 拡大率変更
+    function zoomChange(key){
+
+        clog('zoom change ' + key)
+        if (WIDTH_MAP[key]) {
+
+            num = Number(key)
+            let width = $(window).width()
+            clog('change zoom window.width ' + width)
+
+            let img_w = Math.floor(width / num) -10
+            $('img[type=page]').css('width', img_w)
+            $('img[type=page]').each((i,e) => {
+                src = $(e).attr('src')
+                if (img_w > 150 ){
+                    $(e).attr('src',src.replace('thumb_','page_'))
+                }else{
+                    $(e).attr('src',src.replace('page_','thumb_'))
+                }
+
+                $(window).width()
+            })
+        }
+
+    }
+
+    function eventImg(){
+        $('img[type=page]').click((e)=>{
+            ST.click_page = $(e.target).attr('id')
+            clog('page click ',ST.click_page)
+            refresh()
+        })
+
+        $(document).on('click', 'img[type=navi_img]', (e)=> {
+
+            ST.click_page = $(e.target).attr('pagenum')
+            clog("navi click goto page = " + ST.click_page)
+            refresh()
+
+            element = $('div[id=page_div_' + ST.click_page + ']')
+            $('html, body').animate({
+                scrollTop: element.offset().top
+            }, 100, function(){  refresh()    }) // 1000ミリ秒（1秒）のアニメーション
+
+            $('#navi_window').toggle()
+        })
+    }
+
+    function getHHIISS(){
+        const today = new Date()
+        const hours = String(today.getHours()).padStart(2, '0')    // 時を取得
+        const minutes = String(today.getMinutes()).padStart(2, '0') // 分を取得
+        const seconds = String(today.getSeconds()).padStart(2, '0') // 秒を取得
+
+        const currentTime = `${hours}:${minutes}:${seconds}`
+        return currentTime
+    }
+
+
+
+
+    $(document).ready(()=>{
+        eventImg()
+        eventResize()
+        refresh()
+        zoomChange(ST.img_per_screen)
+    })
+</script>
