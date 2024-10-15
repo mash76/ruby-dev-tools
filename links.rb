@@ -1,4 +1,9 @@
-SQLITE_PATH = File.expand_path('files/links.sql3')
+SQLITE_PATH = File.expand_path('files/links222.sql3')
+
+CATE1_DEFAULT_ID = 24
+CATE2_DEFAULT_ID = 36
+CATE1_DEFAULT_NAME = "default"
+CATE2_DEFAULT_NAME = "default"
 
 def ajax_link(p,db)
     return unless p[:ajax]
@@ -8,7 +13,7 @@ def ajax_link(p,db)
         href = p[:href].to_s
         name = href.gsub(/.*\/\//,'').gsub(/\/.*/,'').gsub('.com','').gsub('.jp','')
         shortcut = name
-        add(p,db,name,href,shortcut)  # insert
+        insert_link(p,db,name,href,shortcut)  # insert
         return
     end
 
@@ -69,9 +74,9 @@ def main
     out '<script>' + File.read("_form_events.js") + '</script>'
     out menu(__FILE__)
 
-	db = SQLite3::Database.new SQLITE_PATH
+	db = SQL3.connect_or_create(SQLITE_PATH,create_tables)
 	db.results_as_hash = true
-	out sqlite3_info(SQLITE_PATH) + br
+	out SQL3.info(SQLITE_PATH) + br
 
     # ajax ----------------------------------------
     ajax_link(p,db)
@@ -141,7 +146,7 @@ def v_new(p,db)
     out '</form>'
 
     # insert
-    add(p,db,name,href,shortcut)
+    insert_link(p,db,name,href,shortcut)
 end
 
 def v_manage(p,db)
@@ -279,14 +284,15 @@ def v_links(p,db,edit)
     out br
 
     # 表示 cate1
+    out links.inspect
     cate1s_raw.each do |cate1_row|
         cate1_id = cate1_row['id']
-        out '<div>'
-        unless links.key?(cate1_id)
-            out sRed(' no links ' + cate1_id)
-            next
-        end
-        out '</div>'
+        # out '<div>'
+        # unless links.key?(cate1_id)
+        #     out sRed(cate1_row['name'] + ' no links ' + cate1_id.to_s)
+        #     next
+        # end
+        # out '</div>'
 
         next if cate1_row['is_disp'] == 0
         # 表示 サブカテ cate2 loop
@@ -320,7 +326,8 @@ def v_links(p,db,edit)
 
             #表示 個別リンク
             out '<div cate1="' + cate1_id.to_s + '" cate2="' + cate2_id.to_s + '">'
-            if links[cate1_id].key?(cate2_id)
+
+            if links.key?(cate1_id) && links[cate1_id].key?(cate2_id)
                 links[cate1_id][cate2_id].each do |row|
 
                     # dir www app で色変える
@@ -360,7 +367,8 @@ def v_links(p,db,edit)
 end
 
 
-def add(p,db,name,href,shortcut)
+def insert_link(p,db,name,href,shortcut)
+
     valid = true
     if name.length > 0 && href.length > 0
         if (name=='' or href == '' or shortcut == '')
@@ -375,43 +383,52 @@ def add(p,db,name,href,shortcut)
             out br
             out sRed("exist ") + hash2html(kizon) + br if kizon.length > 0
 
-            date =  now_time_str
-            sqlite2hash("insert into links (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at) values(24,36,'" + name + "' , '" + href + "' , '" + shortcut + "',0, '" + date + "', '" + date + "') ",db)
+            sqlite2hash("insert into links (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at) values(" + CATE1_DEFAULT_ID.to_s + "," + CATE2_DEFAULT_ID.to_s + ",'" + name + "' , '" + href + "' , '" + shortcut + "',0, '" + now_time_str + "', '" + now_time_str + "') ",db)
 
             puts 'true'
         end
     end
 end
 
+def create_tables
 
+    return "
+        CREATE TABLE cate1 (
+            id	INTEGER,
+            name	TEXT NOT NULL UNIQUE,
+            sort_order	INTEGER NOT NULL DEFAULT 0,
+            is_disp	INTEGER NOT NULL DEFAULT 1,
+            created_at	TEXT,
+            PRIMARY KEY(id)
+        );
+        CREATE TABLE cate2 (
+            id	INTEGER NOT NULL,
+            cate1_id	INTEGER NOT NULL,
+            name	TEXT NOT NULL,
+            created_at	TEXT,
+            PRIMARY KEY(id)
+        );
+        CREATE TABLE links (
+            id	INTEGER NOT NULL,
+            cate1	INTEGER,
+            cate2	INTEGER,
+            name	TEXT NOT NULL,
+            shortcut	TEXT,
+            href	TEXT NOT NULL,
+            use_count	INTEGER NOT NULL DEFAULT 0,
+            last_use_date	TEXT,
+            created_at	TEXT,
+            updated_at	TEXT,
+            PRIMARY KEY(id)
+        );
+
+        insert into cate1 (id,name,created_at)
+        values(" + CATE1_DEFAULT_ID.to_s + ",'" + CATE1_DEFAULT_NAME + "','" + now_time_str + "');
+
+        insert into cate2 (id,cate1_id,name,created_at)
+        values(" + CATE2_DEFAULT_ID.to_s + "," + CATE1_DEFAULT_ID.to_s + ",'" + CATE2_DEFAULT_NAME + "','" + now_time_str + "')
+
+        "
+end
 
 main
-
-
-# CREATE TABLE "cate1" (
-# 	"id"	INTEGER,
-# 	"name"	TEXT NOT NULL UNIQUE,
-# 	"sort_order"	INTEGER NOT NULL DEFAULT 0,
-# 	"is_disp"	INTEGER NOT NULL DEFAULT 1,
-# 	"created"	TEXT,
-# 	PRIMARY KEY("id")
-# )
-# CREATE TABLE "cate2" (
-# 	"id"	INTEGER NOT NULL,
-# 	"cate1_id"	INTEGER NOT NULL,
-# 	"name"	TEXT NOT NULL,
-# 	PRIMARY KEY("id")
-# )
-# CREATE TABLE "links" (
-# 	"id"	INTEGER NOT NULL,
-# 	"cate1"	INTEGER,
-# 	"cate2"	INTEGER,
-# 	"name"	TEXT NOT NULL,
-# 	"shortcut"	TEXT,
-# 	"href"	TEXT NOT NULL,
-# 	"use_count"	INTEGER NOT NULL DEFAULT 0,
-# 	"last_use_date"	TEXT,
-# 	"created_at"	TEXT,
-# 	"updated_at"	TEXT,
-# 	PRIMARY KEY("id")
-# )

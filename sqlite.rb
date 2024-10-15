@@ -64,7 +64,7 @@ def v_db_list()
     dbs = []
     if db_files.length > 0
         db_files.each do |path|
-            info = sqlite3_info_hash(path)
+            info = SQL3.info_hash(path)
             info['updated_at'] = color_recent_time(info['updated_at'].to_s)
             dbs << info
         end

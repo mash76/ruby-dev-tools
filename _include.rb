@@ -117,18 +117,35 @@ class SQLite3::Database
   end
 end
 
-def sqlite3_info(path)
-  ret =  sOrange('sqlite3 ') + a_tag(sSilver(path),"/dev/sqlite?sqlite_path=" +  URI.encode_www_form_component(path) + '&view=db') + spc
-  stat = File.stat(path)
-  db = SQLite3::Database.new path
-  tables = sqlite2hash("SELECT * FROM sqlite_master WHERE type='table' ",db,false)
-  db.close
-  # ret << tables.length.to_s + sSilver('tables ')
-  ret << (stat.size / 1024.0 / 1024.0).round(2).to_s + sSilver("mb ") + Time.at(stat.mtime).strftime('%Y-%m-%d %H:%M:%S')
+module SQL3
+  def self.connect_or_create(path, create_sql)
+    if File.exist?(path)
+      db = SQLite3::Database.new(path)
+      out sGreen("SQLite3接続 ") + sSilver(path)
+    else
+      db = SQLite3::Database.new(path)
+      out sOrange("SQLite3作成 ") + sSilver(path)
+      db.execute_batch(create_sql)
+      out sGreen("テーブルを作成しました")
+    end
+    db
+  end
+
+  def self.info(path)
+    ret =  sOrange('sqlite3 ') + a_tag(sSilver(path),"/dev/sqlite?sqlite_path=" +  URI.encode_www_form_component(path) + '&view=db') + spc
+    stat = File.stat(path)
+    db = SQLite3::Database.new path
+    tables = sqlite2hash("SELECT * FROM sqlite_master WHERE type='table' ",db,false)
+    db.close
+    # ret << tables.length.to_s + sSilver('tables ')
+    ret << (stat.size / 1024.0 / 1024.0).round(2).to_s + sSilver("mb ") + Time.at(stat.mtime).strftime('%Y-%m-%d %H:%M:%S')
+  end
 
 end
 
-def sqlite3_info_hash(path)
+
+
+def SQL3.info_hash(path)
   ret = {}
   ret['file_path'] =  a_tag(path,'/dev/sqlite?sqlite_path=' +  URI.encode_www_form_component(path) + "&view=db")
   stat = File.stat(path)

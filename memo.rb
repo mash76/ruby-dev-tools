@@ -25,7 +25,7 @@ def main
 
     # ----------------------------
 
-    out sqlite3_info(SQLITE_MEMO_PATH)
+    out SQL3.info(SQLITE_MEMO_PATH)
     out spc + a_tag('new','?view=new')
 
     out (spc * 20) + a_tag('db_regen','?view=db_regen')

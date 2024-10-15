@@ -18,7 +18,7 @@ def main
 	db = SQLite3::Database.new SQLITE_PATH
 	db.results_as_hash = true
 
-	out sqlite3_info(SQLITE_PATH)
+	out SQL3.info(SQLITE_PATH)
 
 	books_all = sqlite2hash("select count(*) ct FROM books",db,false)
 	api_all = sqlite2hash("select count(*) ct FROM api_calls",db,false)

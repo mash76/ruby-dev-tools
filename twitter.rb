@@ -11,7 +11,7 @@ def main
 
 	db = SQLite3::Database.new SQLITE_PATH
 	db.results_as_hash = true
-	out sqlite3_info(SQLITE_PATH) + br
+	out SQL3.info(SQLITE_PATH) + br
 
     out "twitter manager"
 

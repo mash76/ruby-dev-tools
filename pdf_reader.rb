@@ -38,7 +38,7 @@ def main()
     out '<script>' + File.read("_form_events.js") + '</script>'
     out menu __FILE__
 
-    out sqlite3_info(PDF_SQLITE_PATH) + br
+    out SQL3.info(PDF_SQLITE_PATH) + br
 
     # recent 最近使ったファイル
     recents = sqlite2hash("select * from pdf order by updated_at desc limit 15",db, false )

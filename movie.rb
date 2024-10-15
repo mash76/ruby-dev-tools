@@ -56,7 +56,7 @@ def main()
     out menu(__FILE__)
 
     out sBG("movie path") + spc + sSilver(MOVIE_PATH) + br
-    out sqlite3_info(SQLITE_PATH) + br
+    out SQL3.info(SQLITE_PATH) + br
 
     p = {}
    # p_requires(["rate"])
