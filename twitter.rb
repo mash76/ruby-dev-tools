@@ -9,8 +9,7 @@ def main
     out '<script>' + File.read("_form_events.js") + '</script>'
     out menu(__FILE__)
 
-	db = SQLite3::Database.new SQLITE_PATH
-	db.results_as_hash = true
+	db = SQL3.connect_or_create(SQLITE_PATH,'')
 	out SQL3.info(SQLITE_PATH) + br
 
     out "twitter manager"

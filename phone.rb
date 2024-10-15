@@ -2,7 +2,7 @@ require "sqlite3"
 
 # macのfsの文字コードは UTF-8-MAC  UTF-8でsqlite3に保存、ファイルパスを通常utf8ｎに変換
 
-SQLITE_PATH = File.expand_path("files/phone.sql3")
+SQLITE_PATH = File.expand_path("files/phone.sql3","")
 
 
 def main
@@ -12,13 +12,9 @@ def main
     out '<script>' + File.read("_form_events.js") + '</script>'
     out menu(__FILE__)
 
-    db = SQLite3::Database.new SQLITE_PATH
-    db.results_as_hash = true
+	db = SQL3.connect_or_create(SQLITE_PATH,'')
 
     out "smartphone prices"
-
-
-
 end
 
 main

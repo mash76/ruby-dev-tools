@@ -2,9 +2,7 @@
 
 PDF_SQLITE_PATH = File.expand_path("files/pdf.sql3")
 PDF_OUTPUT_PATH = './assets/pdf_pages'
-PDF_DIR = '/Users/masatohori/Library/CloudStorage/Dropbox/scan'
-
-
+PDF_DIR = File.expand_path('~/Library/CloudStorage/Dropbox/scan')
 
 
 def get_path_from_inode(inode)
@@ -18,8 +16,7 @@ def main()
 
     p = $params
 
-    db = SQLite3::Database.new PDF_SQLITE_PATH
-    db.results_as_hash = true
+	db = SQL3.connect_or_create(PDF_SQLITE_PATH,'')
 
     ret_ajax_bool = ajax(p)
     return if ret_ajax_bool # ajax実行したならそこで終了

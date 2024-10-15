@@ -1,10 +1,22 @@
 require "sqlite3"
 SQLITE_MEMO_PATH = 'files/memo.sql3'
 
+def create_tables
+    return "
+        CREATE TABLE memos (
+            id INTEGER PRIMARY KEY,
+            title TEXT,
+            text TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    "
+end
+
+
 def main
 
-    db = SQLite3::Database.new SQLITE_MEMO_PATH
-    db.results_as_hash = true
+    db = SQL3.connect_or_create(SQLITE_MEMO_PATH,create_tables)
     p = $params
 
     view = p[:view] || 'list'
@@ -104,7 +116,7 @@ def v_list(p,db)
 
     # 本文ループ
     memos.each do |row|
-        out '<div id="memo' + row["id"].to_s + '" ondblclick="edit(' + row["id"].to_s + ')">'
+        out '<div id="memo' + row['id'].to_s + '" ondblclick="edit(' + row['id'].to_s + ')">'
 
         # title
         out '<div style="border-bottom:1px solid silver;">'
@@ -180,12 +192,3 @@ end
 
 
 main
-
-
-# CREATE TABLE memos (
-#     id INTEGER PRIMARY KEY,
-#     title TEXT,
-#     text TEXT,
-#     created_at TEXT,
-#     updated_at TEXT
-#   )

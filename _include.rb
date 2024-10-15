@@ -108,17 +108,11 @@ def truncate_by_width(str, max_width)
   out_str
 end
 
-class SQLite3::Database
-  attr_accessor :file_path
-  alias_method :original_initialize, :initialize
-  def initialize(file_name, *args)
-    self.file_path = file_name
-    original_initialize(file_name, *args)
-  end
-end
 
 module SQL3
   def self.connect_or_create(path, create_sql)
+
+    puts "\x1b[33m" + 'sql3 conn ' + "\x1b[0m" + path
     if File.exist?(path)
       db = SQLite3::Database.new(path)
       out sGreen("SQLite3接続 ") + sSilver(path)
@@ -128,6 +122,7 @@ module SQL3
       db.execute_batch(create_sql)
       out sGreen("テーブルを作成しました")
     end
+    db.results_as_hash = true
     db
   end
 
@@ -140,12 +135,11 @@ module SQL3
     # ret << tables.length.to_s + sSilver('tables ')
     ret << (stat.size / 1024.0 / 1024.0).round(2).to_s + sSilver("mb ") + Time.at(stat.mtime).strftime('%Y-%m-%d %H:%M:%S')
   end
-
 end
 
-
-
 def SQL3.info_hash(path)
+
+  #### ファイルなければエラー
   ret = {}
   ret['file_path'] =  a_tag(path,'/dev/sqlite?sqlite_path=' +  URI.encode_www_form_component(path) + "&view=db")
   stat = File.stat(path)
@@ -168,8 +162,8 @@ end
 
 
 def sqlite2hash(sql,db,sql_trim_len=30) #sqlite
-  db.results_as_hash = true
   begin
+    puts "\x1b[33m" + 'sql3 ' + "\x1b[0m" + sql
     out sSilver(sql.trim_spreadable(sql_trim_len)) if sql_trim_len != NO_DISP
     start = Time.now
     ret = db.execute(sql)
@@ -194,6 +188,7 @@ end
 
 def sql2hash(sql, conn_name, trim_len = 50) # mysql
   begin
+      puts "\x1b[35m" + 'mysql ' + "\x1b[0m" + sql
       out sSilver(sql.trim_spreadable(trim_len)) + spc if trim_len != NO_DISP
       results = $mysql_conns[conn_name].query(sql).to_a
       out results.length.to_s + spc + a_tag(sSilver("Edit"),"/dev/sql?conn_name=" + conn_name + "&sql_text=" + URI.encode_www_form_component(sql) ) if trim_len != NO_DISP
@@ -209,14 +204,14 @@ end
 
 
 # class t_hover = 選択行を強調
-def hash2html(hashes,p_class="border")
+def hash2html(hashes,p_class = "border")
   unless hashes.is_a?(Array)
     out sRed("not array ") + __FILE__.to_s + spc + __LINE__.to_s + spc + __method__.to_s + br
     return ''
   end
   return '' if hashes.length == 0
 
-  html ="<table class='" + p_class + "'><tr>"
+  html = "<table class='" + p_class + "'><tr>"
   hashes[0].each  { | key,value | html << '<th nowrap>' + key.to_s + '</th>' }
   html << '</tr>'
 

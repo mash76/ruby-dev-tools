@@ -25,8 +25,7 @@ def main
         return
     end
 
-	db = SQLite3::Database.new sqlite_path
-	db.results_as_hash = true
+	db = SQL3.connect_or_create(sqlite_path,'')
 
     out a_tag(sBlueBG(sqlite_path),"?sqlite_path=" + sqlite_path + '&view=db') + br
 
@@ -104,20 +103,21 @@ def v_db_detail(p,db,sqlite_path)
     indexes = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='index' ",db)
     out hash2html(indexes)
 
-    tables2 = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='table' ",db)
-    out br
+
 
     tables = sqlite2hash("SELECT type,name,'' cols,'' rows,rootpage,sql FROM sqlite_master WHERE type='table' ",db,NO_DISP)
     tables.each do |row|
-        out '<pre>' + row['sql'] + '</pre>'
+        out '<pre>' + row['sql'] + ';</pre>'
     end
 
-    # tables2.each do |row|
-    #     out sBlue(row['name']) + spc
-    #     sql = "PRAGMA table_info(" + row['name'] + ")"
-    #     info = sqlite2hash(sql,db)
-    #     out hash2html(info)
-    # end
+    tables2 = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='table' ",db)
+    out br
+    tables2.each do |row|
+        out sBlue(row['name']) + spc
+        sql = "PRAGMA table_info(" + row['name'] + ")"
+        info = sqlite2hash(sql,db)
+        out hash2html(info)
+    end
 end
 
 def v_row_edit(p,db,sqlite_path)
@@ -168,9 +168,19 @@ def v_table(p,db,sqlite_path,table)
     out i_hidden "table",table
     out i_checkbox("no_limit",no_limit)
     out i_submit_trans
-    out "</form><hr/>"
+    out "</form>"
 
-    out s150(sBlue(table)) + spc
+    out s150(sBlue(table)) + spc + '<hr/>'
+
+    # columns
+    out 'columns '
+    sql = "PRAGMA table_info(" + table + ")"
+    info = sqlite2hash(sql,db)
+    out hash2html(info) + br
+
+
+    # data
+    out 'data '
     sql = "SELECT '' action_,* FROM " + table
     sql += " limit 100" unless no_limit
     data = sqlite2hash(sql,db)

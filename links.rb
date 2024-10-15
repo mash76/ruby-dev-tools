@@ -1,71 +1,10 @@
-SQLITE_PATH = File.expand_path('files/links222.sql3')
+SQLITE_PATH = File.expand_path('files/links.sql3')
 
 CATE1_DEFAULT_ID = 24
 CATE2_DEFAULT_ID = 36
 CATE1_DEFAULT_NAME = "default"
 CATE2_DEFAULT_NAME = "default"
 
-def ajax_link(p,db)
-    return unless p[:ajax]
-
-    puts "ajax " + p[:ajax] + ' ' + p.inspect
-    if p[:ajax] == 'add'
-        href = p[:href].to_s
-        name = href.gsub(/.*\/\//,'').gsub(/\/.*/,'').gsub('.com','').gsub('.jp','')
-        shortcut = name
-        insert_link(p,db,name,href,shortcut)  # insert
-        return
-    end
-
-    # ajax=add_cate2&cat1_id=24&cate2_name=sdds
-    if p[:ajax] == 'add_cate2'
-        sql_del = "insert into cate2 (cate1_id,name)
-                    values('" + p[:cat1_id] + "','" + p[:cate2_name] + "')";
-        sqlite2hash(sql_del, db)
-        return
-    end
-
-    if p[:ajax] == 'del'
-        sql_del = 'delete from links where id=' + p[:id].to_s
-        sqlite2hash(sql_del, db)
-        return
-    end
-
-    # link カウントアップ 遷移ごとに
-    if p[:ajax] == 'count_up' && p[:id]
-        sql_count_up = "update links set use_count = use_count + 1, last_use_date = '" + now_time_str + "' where id=" + p[:id].to_s
-        puts 'sql ' + sql_count_up
-        sqlite2hash(sql_count_up, db)
-        return
-    end
-
-    #link カテゴリ変更 dropで
-    if p[:ajax] == 'change_cate' && p[:cate1] && p[:cate2] && p[:id]
-        sql_update = "update links set cate1='" + p[:cate1] + "' , cate2='" + p[:cate2] + "' where id=" + p[:id].to_s
-        puts 'sql ' + sql_update
-        sqlite2hash(sql_update, db)
-        return
-    end
-
-    #ファイルやdirを開く
-    if p[:ajax] == 'open' && p[:path].to_s.length > 0
-        shell = 'open "$HOME/' + p[:path] + '"';
-        puts 'ajax ' +  shell
-        run_shell(shell)
-        return
-    end
-
-    # アプリを起動
-    if p[:ajax] == "runapp" && p[:path].to_s.length > 0
-        shell = 'open -a "' + p[:path] + '"';
-        puts 'ajax ' +  shell
-        run_shell(shell)
-        return
-    end
-
-
-
-end
 
 def main
 
@@ -75,7 +14,6 @@ def main
     out menu(__FILE__)
 
 	db = SQL3.connect_or_create(SQLITE_PATH,create_tables)
-	db.results_as_hash = true
 	out SQL3.info(SQLITE_PATH) + br
 
     # ajax ----------------------------------------
@@ -284,7 +222,6 @@ def v_links(p,db,edit)
     out br
 
     # 表示 cate1
-    out links.inspect
     cate1s_raw.each do |cate1_row|
         cate1_id = cate1_row['id']
         # out '<div>'
@@ -389,6 +326,66 @@ def insert_link(p,db,name,href,shortcut)
         end
     end
 end
+
+def ajax_link(p,db)
+    return unless p[:ajax]
+
+    puts "ajax " + p[:ajax] + ' ' + p.inspect
+    if p[:ajax] == 'add'
+        href = p[:href].to_s
+        name = href.gsub(/.*\/\//,'').gsub(/\/.*/,'').gsub('.com','').gsub('.jp','')
+        shortcut = name
+        insert_link(p,db,name,href,shortcut)  # insert
+        return
+    end
+
+    # ajax=add_cate2&cat1_id=24&cate2_name=sdds
+    if p[:ajax] == 'add_cate2'
+        sql_del = "insert into cate2 (cate1_id,name)
+                    values('" + p[:cat1_id] + "','" + p[:cate2_name] + "')";
+        sqlite2hash(sql_del, db)
+        return
+    end
+
+    if p[:ajax] == 'del'
+        sql_del = 'delete from links where id=' + p[:id].to_s
+        sqlite2hash(sql_del, db)
+        return
+    end
+
+    # link カウントアップ 遷移ごとに
+    if p[:ajax] == 'count_up' && p[:id]
+        sql_count_up = "update links set use_count = use_count + 1, last_use_date = '" + now_time_str + "' where id=" + p[:id].to_s
+        puts 'sql ' + sql_count_up
+        sqlite2hash(sql_count_up, db)
+        return
+    end
+
+    #link カテゴリ変更 dropで
+    if p[:ajax] == 'change_cate' && p[:cate1] && p[:cate2] && p[:id]
+        sql_update = "update links set cate1='" + p[:cate1] + "' , cate2='" + p[:cate2] + "' where id=" + p[:id].to_s
+        puts 'sql ' + sql_update
+        sqlite2hash(sql_update, db)
+        return
+    end
+
+    #ファイルやdirを開く
+    if p[:ajax] == 'open' && p[:path].to_s.length > 0
+        shell = 'open "$HOME/' + p[:path] + '"';
+        puts 'ajax ' +  shell
+        run_shell(shell)
+        return
+    end
+
+    # アプリを起動
+    if p[:ajax] == "runapp" && p[:path].to_s.length > 0
+        shell = 'open -a "' + p[:path] + '"';
+        puts 'ajax ' +  shell
+        run_shell(shell)
+        return
+    end
+end
+
 
 def create_tables
 

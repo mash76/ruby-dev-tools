@@ -39,8 +39,7 @@ def main()
 
     # ----------------------------------------
 
-    db = SQLite3::Database.new SQLITE_PATH
-    db.results_as_hash = true
+	db = SQL3.connect_or_create(SQLITE_PATH,'')
 
     # ajax ----------------------------------------
 

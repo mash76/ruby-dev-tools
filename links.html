@@ -13,7 +13,7 @@
     </table>
 </div>
 
-<div id="add_cate2" style="
+<div id="form_add_cate2" style="
     position:fixed; top:100px; left:100;
     padding: 30px;
     opacity:0.9;
@@ -73,7 +73,7 @@
     function showAddCate2Form(cate1_name){
 
         $('#cate1').val(cate1_name)
-        $('#add_cate2').show()
+        $('#form_add_cate2').show()
         $('#cate2').focus()
     }
 
@@ -81,7 +81,8 @@
         const ajax_url = '?ajax=add_cate2&cat1_id=' + cate1_id + '&cate2_name=' + cate2_name
         clog(ajax_url)
         $.get(ajax_url)
-
+        $('#form_add_cate2').hide()
+        location.reload()
     }
 
     function sBase(str,style) { return '<span style="' + style + '">' + str + '</span>' }
