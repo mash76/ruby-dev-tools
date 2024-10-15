@@ -6,6 +6,11 @@ CATE1_DEFAULT_NAME = "default"
 CATE2_DEFAULT_NAME = "default"
 
 
+# ?ajax=runapp&path=System+Settings   アプリを開く
+# ?ajax=open&path=Desktop    ファイルやフォルダを開く
+
+
+
 def main
 
     p = $params

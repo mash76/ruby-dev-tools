@@ -1,4 +1,3 @@
-require "sqlite3"
 
 # macのfsの文字コードは UTF-8-MAC  UTF-8でsqlite3に保存、ファイルパスを通常utf8ｎに変換
 

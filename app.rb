@@ -1,8 +1,6 @@
 require 'sinatra'
 require 'mysql2'
 require 'cgi'
-#require 'json-schema'
-require 'gems'
 require 'concurrent-ruby'
 require_relative '_info'
 require_relative '_include'

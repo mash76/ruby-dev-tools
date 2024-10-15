@@ -3,3 +3,4 @@ assets/*
 cache/*
 docker/*
 _info.rb
+Gemfile.lock
