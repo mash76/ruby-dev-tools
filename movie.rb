@@ -82,7 +82,7 @@ def main()
     filter_mac = filter.to_s.encode("UTF-8-MAC", "UTF-8")
     stat = get_cache(db)
 
-    menus = ["list","db_import","db_stat","word_stat","chk_inode","chk_local","scan_meta"];
+    menus = ["list","db_import","db_stat","word_stat","chk_inode","chk_local","scan_meta"]
     menus.each do |m|
         disp = (m == mode ? sRed(m) : m)
         out a_tag(disp,'?mode=' + m) + spc
@@ -420,7 +420,7 @@ def v_chk_local(p,db)
     hours_back = p['hours_back'].to_f
     hours_back = 500 if p['hours_back'] == ''
     target = now - (hours_back * 3600.0).to_i
-    target_str = target.strftime("%Y-%m-%d %H:%M:%S")
+    target_str = target.strftime(TIME_FMT.YYYYMMDDHHIISS)
 
     out sBG("2.n時間以上前に確認したデータを再確認&更新") + br
     hour_ary = ['0.01','0.05','0.1','0.3','0.5','0.8','1','2','5','7',
@@ -612,7 +612,7 @@ def check_local_and_insert(rows,db)
                 Timeout.timeout(2) do  # 5秒のタイムアウトを設定
                     shell_ffprobe = 'ffprobe -v error -print_format json -show_chapters "' + full_path + '"'
                     start = Time.now
-                    strat_str = start.strftime('%Y-%m-%d %H:%M:%S')
+                    strat_str = start.strftime(TIME_FMT.YYYYMMDDHHIISS)
                     ct[:check].increment
                     ct_check = ct[:check].value
                     output = run_shell(shell_ffprobe)
@@ -756,7 +756,7 @@ end
 def update_edit_time(inode,filepath,db)
 
     stat = File.stat(MOVIE_PATH + filepath.encode("UTF-8-MAC","UTF-8"))
-    sql_upd_time = "update movies set ctime='" + stat.ctime.strftime('%Y-%m-%d %H:%M:%S') + "',atime='" + stat.atime.strftime('%Y-%m-%d %H:%M:%S') + "',mtime='" + stat.mtime.strftime('%Y-%m-%d %H:%M:%S') + "' where inode=" + inode.to_s
+    sql_upd_time = "update movies set ctime='" + stat.ctime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "',atime='" + stat.atime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "',mtime='" + stat.mtime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "' where inode=" + inode.to_s
     sqlite2hash(sql_upd_time,db)
 end
 

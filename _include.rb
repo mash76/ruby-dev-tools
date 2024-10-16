@@ -64,7 +64,7 @@ class String
     return str
   end
 
-  def trim_spreadable(trim_length=30, is_html_encode=false)
+  def trim_spreadable(trim_length=30, is_html_encode = false)
     len = self.length
     str = self.gsub(/\n/,'').gsub(/<br\/?>/,'')[0, trim_length]  # brと \n を除去して trim
     return str if len <= trim_length
@@ -74,7 +74,11 @@ class String
     str_origin = CGI.escapeHTML(str_origin) if is_html_encode
     str_trim = str + '..'
     str = a_tag( sSilver(CGI.escapeHTML(str_trim)) , "javascript:$('#trim" + $id_index.to_s + "').css('display','block')")
-    str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + CGI.escapeHTML(str_origin).nl2br + '</div>'
+
+    str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + str_origin + '</div>'
+
+        # str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + CGI.escapeHTML(str_origin).nl2br + '</div>'
+
     return str
   end
 
@@ -199,11 +203,27 @@ def sql2hash(sql, conn_name, trim_len = 50) # mysql
   end
 end
 
+def hash2html_nohead(hashes,p_class = "border")
+  unless hashes.is_a?(Array)
+    out sRed("not array ") + __FILE__.to_s + spc + __LINE__.to_s + spc + __method__.to_s + br
+    return ''
+  end
+  return '' if hashes.length == 0
+
+  html = "<table class='" + p_class + "'>"
+
+  hashes.each do |row|
+      html << '<tr>'
+      row.each { |key,value | html << '<td nowrap>' + value.to_s + '</td>'  }
+      html << '</tr>'
+  end
+  html << '</table>'
+  html
+end
 
 
 
-
-# class t_hover = 選択行を強調
+# class border セル境界線つける t_hover = 選択行を強調
 def hash2html(hashes,p_class = "border")
   unless hashes.is_a?(Array)
     out sRed("not array ") + __FILE__.to_s + spc + __LINE__.to_s + spc + __method__.to_s + br
@@ -232,8 +252,14 @@ def hash2records(hash)
   records
 end
 
-def now_time_str
-  Time.now.strftime('%Y-%m-%d %H:%M:%S')
+TIME_FMT = OpenStruct.new
+TIME_FMT.YYYYMMDDHHIISS = '%Y-%m-%d %H:%M:%S'
+TIME_FMT.YYYYMMDD = '%Y-%m-%d'
+TIME_FMT.YYMMDD = '%y-%m-%d'
+TIME_FMT.HHIISS = '%H:%M:%S'
+
+def now_time_str(format = TIME_FMT.YYYYMMDDHHIISS)
+  Time.now.strftime(format)
 end
 
 # 値ごとに色をつける 0ならsilver 5までは** 10までは **
