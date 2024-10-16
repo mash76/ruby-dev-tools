@@ -34,10 +34,6 @@ def main
 		disp = view_name == view ? sRed(view_name) : view_name
 		out a_tag(disp,'/dev/links?view=' + view_name) + spc
 	end
-
-    new_edit = (edit == 'on') ? 'off' : 'on'
-    out a_tag('edit' ,'/dev/links?view=' + view + '&edit=' + new_edit ) + spc
-
     out br
 
     out '<table><tr><td>'
@@ -62,7 +58,11 @@ def v_apps(p,db)
     shell = 'find /Applications /System/Applications /Users/$(whoami)/Applications -name "*.app" -maxdepth 2'
     apps = run_shell(shell).split_nl
     out br
-    out apps.join(br) + br + br
+    apps.each do |line|
+        file_name = File.basename(line)
+        out line.gsub(file_name,sBlue(file_name)) + br
+    end
+
 
     # shell = 'find /Applications /System/Applications /Users/$(whoami)/Applications -name "*.png" -maxdepth 4'
     # apps = run_shell(shell).split_nl
@@ -225,6 +225,10 @@ def v_links(p,db,edit)
     out br
     out s120(links.length.to_s) + sSilver(' cate ')
     out s120(list.length.to_s) + sSilver(' links ')
+
+    new_edit = (edit == 'on') ? 'off' : 'on'
+    out a_tag('edit' ,'/dev/links?view=links&edit=' + new_edit ) + spc
+
     out br
 
     # 表示 cate1
