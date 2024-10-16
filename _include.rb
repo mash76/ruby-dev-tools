@@ -7,31 +7,6 @@ require 'erb'
 
 NO_DISP = false
 
-if 1 == 1
-  mysql1 = Mysql2::Client.new(
-    :host     => '0.0.0.0',
-    :username => 'myuser',
-    :password => 'mypassword',
-    :database => 'sakila'
-  )
-
-  mysql2 = Mysql2::Client.new(
-      :host     => '0.0.0.0',
-      :username => 'myuser',
-      :password => 'mypassword',
-      :database => 'employees'
-    )
-
-  mysql3 = Mysql2::Client.new(
-      :host     => '0.0.0.0',
-      :username => 'myuser',
-      :password => 'mypassword',
-      :database => 'ec'
-    )
-
-  $mysql_conns = {'sakila' => mysql1, 'employees' => mysql2,'ec' => mysql3}
-end
-
 
 def ffprobe_streams(path)
 	  path_esc = path.gsub('"','\"')

@@ -6,13 +6,6 @@
 
 LIST_LOG_LIMIT = 20
 
-GIT_REPOS = [
-    "/git_test/react",
-    "/git_test/laravel",
-    # "/git_test/electron",
-    "/git_test/FizzBuzzEnterpriseEdition"
-]
-
 GIT_SHOW_SHELL = false
 
 def main
