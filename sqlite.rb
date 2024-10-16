@@ -105,10 +105,11 @@ def v_db_detail(p,db,sqlite_path)
 
 
 
-    tables = sqlite2hash("SELECT type,name,'' cols,'' rows,rootpage,sql FROM sqlite_master WHERE type='table' ",db,NO_DISP)
-    tables.each do |row|
-        out '<pre>' + row['sql'] + ';</pre>'
+    tables_indexes = sqlite2hash("SELECT type,name,'' cols,'' rows,rootpage,sql FROM sqlite_master  ",db,NO_DISP)
+    tables_indexes.each do |row|
+        out '<pre>' + row['sql'] + ';</pre>' if row['sql']
     end
+
 
     tables2 = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='table' ",db)
     out br

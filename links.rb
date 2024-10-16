@@ -203,6 +203,7 @@ end
 
 def v_links(p,db,edit)
 
+    # 取得
     cate1s_raw = sqlite2hash('select * from cate1 order by sort_order asc',db,false)
     cate2s_raw = sqlite2hash('select id,name,cate1_id from cate2 ',db,false)
     list = sqlite2hash('select
@@ -229,12 +230,6 @@ def v_links(p,db,edit)
     # 表示 cate1
     cate1s_raw.each do |cate1_row|
         cate1_id = cate1_row['id']
-        # out '<div>'
-        # unless links.key?(cate1_id)
-        #     out sRed(cate1_row['name'] + ' no links ' + cate1_id.to_s)
-        #     next
-        # end
-        # out '</div>'
 
         next if cate1_row['is_disp'] == 0
         # 表示 サブカテ cate2 loop
@@ -251,12 +246,11 @@ def v_links(p,db,edit)
             # cate1 表示
             if ct == 1
                 if cate1_row['is_disp'] == 1
-                    out '<div draggable="true" style="width:120px; " cate1_id="' + cate1_id.to_s + '" >' +
-                            sBold(sGray(cate1_row['name']))
+                    out '<div type="cate1_div" draggable="true" style="width:120px; " cate1_id="' + cate1_id.to_s + '" >'
+                    out sBold(sGray(cate1_row['name']))
 
-                    if edit == 'on'
-                        out ' <a href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style="font-size:80%; ">cate2+</a>'
-                    end
+                    # グレーで、mouseoverで追加ボタン強調
+                    out sBold(' <a id="cate_add_a_' + cate1_id.to_s + '" href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style=" display_none; color:#eee;">+</a>')
                     out '</div>'
                 else
                     out s150(sSilver(cate1_row['name']))

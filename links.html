@@ -13,21 +13,30 @@
     </table>
 </div>
 
-<div id="form_add_cate2" style="
-    position:fixed; top:100px; left:100;
-    padding: 30px;
-    opacity:0.9;
-    border-radius:20px;
-    border:1px solid silver;
-    color:gray; font-size:80%;
-    display:none;
-    ">
-    <form id="f1"></form>
-        cate1<input id="cate1" type='text' name='cate1' ><br/>
-        cate2<input id="cate2" type='text' name='caet2' >
-        <input type="submit" onclick="submitAddCate2( $('#cate1').val(), $('#cate2').val())">
-    </form>
 
+<div id="add_cate2_window"
+    style="position:fixed; top:-8px; left: -8px; width:103%; height:103%;
+    background-color: rgba(50, 50, 50, 0.6);
+    display:none;">
+
+
+
+    <div id="form_add_cate2" style="
+        position:fixed; top:100px; left:100;
+        padding: 30px;
+        opacity:0.9;
+        border-radius:20px;
+        border:1px solid silver;
+        color:gray; font-size:80%;
+        background:white;
+        ">
+        <div style="font-size:120%" >Cate2追加</div>
+        <form id="f1"></form>
+            cate1<input id="cate1" type='text' name='cate1' ><br/>
+            cate2<input id="cate2" type='text' name='caet2' >
+            <input type="submit" onclick="submitAddCate2( $('#cate1').val(), $('#cate2').val())">
+        </form>
+    </div>
 </div>
 
 <div id="debug_log" style="position:fixed;
@@ -40,13 +49,15 @@
 
 <script>
 
+    // 移り変わる画面状況
     let ST = {}
     ST.chars = ""
     ST.kouho_ids = []
-    ST.is_input_allow = true
+    ST.can_shortcut_input = true
     ST.drag_id = null
     ST.drag_tag  = null
 
+    // 定数など
     let LOG_TEXTS = []
     const LOG_MAX = 20
     const ENTER_AREA_COLOR = '#f4f4f4'// '#f0f0f0'
@@ -64,6 +75,7 @@
         eventGomibakos()
         eventNewLink()
         eventLinkMove()
+        eventCate1MouseOver()
 
         eventLogWindow()
         // 初回
@@ -73,7 +85,10 @@
     function showAddCate2Form(cate1_name){
 
         $('#cate1').val(cate1_name)
-        $('#form_add_cate2').show()
+
+        $('#add_cate2_window').show()
+        ST.can_shortcut_input = false
+
         $('#cate2').focus()
     }
 
@@ -81,7 +96,8 @@
         const ajax_url = '?ajax=add_cate2&cat1_id=' + cate1_id + '&cate2_name=' + cate2_name
         clog(ajax_url)
         $.get(ajax_url)
-        $('#form_add_cate2').hide()
+        $('#add_cate2_window').hide()
+        ST.can_shortcut_input = true
         location.reload()
     }
 
@@ -208,7 +224,7 @@
 
     }
 
-    // ドラッグ開始イベント
+    // リンク要素 ドラッグ開始イベント
     function eventADragStart(){
         // scつきaタグ クリック処理 ------------------
         $('a[draggable]').on("dragstart",(e) => {
@@ -223,6 +239,24 @@
             // ST.drag_id = e.target.id
         })
     }
+
+    // cate1の横、+ボタン(cate2追加)のmouseover色制御
+    function eventCate1MouseOver(){
+        $('div[type=cate1_div]').mouseenter((e) => {
+            clog('enter ' + e.target.tagName)
+            const cate1_id = $(e.target).attr('cate1_id')
+            $('#cate_add_a_' + cate1_id).css('color','dodgerBlue')
+        })
+        $('div[type=cate1_div]').mouseleave((e) => { // mouseoutでなくmouseleave
+            clog('leave  ' + e.target.tagName)
+            const cate1_id = $(e.target).attr('cate1_id')
+            $('#cate_add_a_' + cate1_id).css('color','#eee')
+        })
+
+
+    }
+
+
 
     // リンク移動イベント
     function eventLinkMove(){
@@ -281,7 +315,7 @@
                 // マッチがなければ入力リセット
                 if (ST.kouho_ids.length == 0) {
                     ST.chars = ""
-                    ST.is_input_allow = true
+                    ST.can_shortcut_input = true
                     dispInputs()
                     return
                 }
@@ -292,7 +326,7 @@
                 }
             }else{
                 // 通常入力
-                if (ST.is_input_allow){
+                if (ST.can_shortcut_input){
                     ST.chars += String.fromCodePoint(e.which).toLowerCase()
                 }
             }
@@ -317,7 +351,7 @@
 
             // 1件に絞れていたら 遷移
             if (ST.kouho_ids.length == 1) openUrl(ST.kouho_ids[0])
-            if (ST.kouho_ids.length == 0) ST.is_input_allow = false
+            if (ST.kouho_ids.length == 0) ST.can_shortcut_input = false
         })
     }
 
@@ -356,7 +390,7 @@
 
     function openUrl(id){
         ST.chars = ''
-        ST.is_input_allow = true
+        ST.can_shortcut_input = true
         ajaxCountUp(id)
         $("#enter_area").css('background','orange')
         // appやdirはajaxで

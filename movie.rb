@@ -1,4 +1,3 @@
-require "sqlite3"
 
 # macのfsの文字コードは UTF-8-MAC  UTF-8でsqlite3に保存、ファイルパスを通常utf8ｎに変換
 MOVIE_PATH = File.expand_path("../../movie")
@@ -37,11 +36,8 @@ end
 
 def main()
 
-    # ----------------------------------------
-
-	db = SQL3.connect_or_create(SQLITE_PATH,'')
-
-    # ajax ----------------------------------------
+	db = SQL3.connect_or_create(SQLITE_PATH,create_tables)
+    out br
 
     if $params[:movie_open_inode].to_s.length > 0
         ajax_cout_update(db,$params[:movie_open_inode])
@@ -86,7 +82,7 @@ def main()
     filter_mac = filter.to_s.encode("UTF-8-MAC", "UTF-8")
     stat = get_cache(db)
 
-    menus = ["list","db_renew","db_import","db_stat","word_stat","chk_inode","chk_local","scan_meta"];
+    menus = ["list","db_import","db_stat","word_stat","chk_inode","chk_local","scan_meta"];
     menus.each do |m|
         disp = (m == mode ? sRed(m) : m)
         out a_tag(disp,'?mode=' + m) + spc
@@ -99,7 +95,6 @@ def main()
     out hash2html(ret)
     out br + sBlueBG(mode) + br
 
-    db_renew(db) if mode == "db_renew"
     v_db_import(db,go_insert) if mode == "db_import"
     v_db_stat(db) if mode == "db_stat"
     get_cache(db,true) if mode == "word_stat"
@@ -765,49 +760,48 @@ def update_edit_time(inode,filepath,db)
     sqlite2hash(sql_upd_time,db)
 end
 
-def db_renew(db)
+def create_tables
+   " CREATE TABLE movies (
+	inode	INTEGER,
+	filepath	TEXT,
+	is_local	TEXT,
+	is_local_checked	TEXT,
+	meta_scan_date	TEXT,
+	streams	INTEGER,
+	chapters	INTEGER,
+	v_codec	TEXT,
+	v_tag	INTEGER,
+	width	INTEGER,
+	height	INTEGER,
+	fps	TEXT,
+	duration	REAL,
+	minutes	INTEGER,
+	v_bit_rate	INTEGER,
+	a_codec	TEXT,
+	a_tag	TEXT,
+	sample_rate	INTEGER,
+	channels	INTEGER,
+	channel_layout	TEXT,
+	a_bit_rate	INTEGER,
+	filesize	INTEGER,
+	filesize_mb	INTEGER,
+	ctime	INTEGER,
+	mtime	INTEGER,
+	atime	INTEGER,
+	view_times	INTEGER NOT NULL DEFAULT 0,
+	last_view_date	TEXT,
+	created	TEXT,
+	PRIMARY KEY(inode)
+);
+CREATE UNIQUE INDEX movies_filename_unique ON movies (
+	filepath	ASC
+);
+CREATE TABLE key_values (
+	key	TEXT NOT NULL UNIQUE,
+	value	TEXT
+);"
 
-    sqlite2hash("drop table key_values",db)
-    sqlite2hash('
-        CREATE TABLE "key_values" (
-            "key"	TEXT NOT NULL UNIQUE,
-            "value"	TEXT
-        ); ',db)
 
-    sqlite2hash("drop table movies",db)
-    sqlite2hash('
-        CREATE TABLE "movies" (
-            "inode"	INTEGER PRIMARY KEY,
-            "filepath"	TEXT,
-            "is_local" TEXT,
-            "is_local_checked" TEXT,
-            "meta_scan_date" TEXT,
-            "streams"	INTEGER,
-            "chapters"	INTEGER,
-            "v_codec"	TEXT,
-            "v_tag"	INTEGER,
-            "width"	INTEGER,
-            "height"	INTEGER,
-            "fps"	TEXT,
-            "duration"	REAL,
-            "minutes"	INTEGER,
-            "v_bit_rate"	INTEGER,
-            "a_codec"	TEXT,
-            "a_tag"	TEXT,
-            "sample_rate"	INTEGER,
-            "channels"	INTEGER,
-            "channel_layout"	TEXT,
-            "a_bit_rate"	INTEGER,
-            "filesize"	INTEGER,
-            "filesize_mb"	INTEGER,
-            "ctime"	INTEGER,
-            "mtime"	INTEGER,
-            "atime"	INTEGER,
-            "created"	TEXT
-        ) ',db)
-
-    sqlite2hash('CREATE UNIQUE INDEX "movies_filename_unique" ON "movies" ( "filepath" ASC )',db)
-    sqlite2hash("delete from movies",db)
 end
 
 def wordList
@@ -906,42 +900,3 @@ def wordList
 end
 
 main
-
-
-
-# CREATE TABLE "movies" (
-# 	"inode"	INTEGER,
-# 	"filepath"	TEXT,
-# 	"is_local"	TEXT,
-# 	"is_local_checked"	TEXT,
-# 	"meta_scan_date"	TEXT,
-# 	"streams"	INTEGER,
-# 	"chapters"	INTEGER,
-# 	"v_codec"	TEXT,
-# 	"v_tag"	INTEGER,
-# 	"width"	INTEGER,
-# 	"height"	INTEGER,
-# 	"fps"	TEXT,
-# 	"duration"	REAL,
-# 	"minutes"	INTEGER,
-# 	"v_bit_rate"	INTEGER,
-# 	"a_codec"	TEXT,
-# 	"a_tag"	TEXT,
-# 	"sample_rate"	INTEGER,
-# 	"channels"	INTEGER,
-# 	"channel_layout"	TEXT,
-# 	"a_bit_rate"	INTEGER,
-# 	"filesize"	INTEGER,
-# 	"filesize_mb"	INTEGER,
-# 	"ctime"	INTEGER,
-# 	"mtime"	INTEGER,
-# 	"atime"	INTEGER,
-# 	"view_times"	INTEGER NOT NULL DEFAULT 0,
-# 	"last_view_date"	TEXT,
-# 	"created"	TEXT,
-# 	PRIMARY KEY("inode")
-# )
-# CREATE TABLE "key_values" (
-# 	"key"	TEXT NOT NULL UNIQUE,
-# 	"value"	TEXT
-# )

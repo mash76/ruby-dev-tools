@@ -15,7 +15,6 @@ end
 def main()
 
     p = $params
-
 	db = SQL3.connect_or_create(PDF_SQLITE_PATH,'')
 
     ret_ajax_bool = ajax(p)
@@ -145,7 +144,6 @@ def v_list(p)
         # すでにdirがあれば
         ino = File.stat(line).ino
         if File.exist?(PDF_OUTPUT_PATH + '/' + ino.to_s)
-
             out sBlue('展開済')
         else
             out PDF_OUTPUT_PATH + '/' + ino.to_s
