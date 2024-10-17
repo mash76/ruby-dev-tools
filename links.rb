@@ -49,14 +49,20 @@ def main
 
     out '</td></tr></table>'
 
-    v_apps(p,db) if view == 'apps'
+    v_folders(p,db) if view == 'folders'
+    v_apps() if view == 'apps'
     v_new(p,db) if view == 'new'
     v_links(p,db,edit) if view == 'links'
     v_manage(p,db) if view == 'manage'
 
 end
 
-def v_apps(p,db)
+def v_folders(p,db)
+
+
+end
+
+def v_apps()
 
     shell = 'find /Applications /System/Applications /Users/$(whoami)/Applications -name "*.app" -maxdepth 2'
     apps = run_shell(shell).split_nl
@@ -67,12 +73,6 @@ def v_apps(p,db)
         sc = name.gsub(/\s+/,'')
        out line.gsub(app_folder_name,sBlue(app_folder_name))  + a_tag(' add','?upd=add_link&name=' + name + '&href=' + URI.encode_www_form_component('?ajax=runapp&path=' + name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
     end
-
-
-    # shell = 'find /Applications /System/Applications /Users/$(whoami)/Applications -name "*.png" -maxdepth 4'
-    # apps = run_shell(shell).split_nl
-    # out br
-    # out apps.join(br)
 
 end
 

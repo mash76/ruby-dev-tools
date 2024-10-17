@@ -6,12 +6,18 @@
 
 LIST_LOG_LIMIT = 20
 GIT_SHOW_SHELL = false
-SQLITE_PATH_GIT = 'files/git.sql3'
+SQLITE_PATH_GIT = 'files/git3.sql3'
 
 def create_tables
 
-    " CREATE TABLE commits (
-        id	INTEGER,
+    " CREATE TABLE repos (
+	local_full_path	TEXT,
+	repo_name	TEXT,
+	remote	TEXT,
+	created_at	TEXT,
+	PRIMARY KEY(local_full_path);
+
+    CREATE TABLE commits (
         repo   TEXT,
         hash	TEXT,
         author TEXT,
@@ -22,7 +28,7 @@ def create_tables
         del_line_ct INTEGER,
         last_view_date	TEXT,
         created_at	TEXT,
-        PRIMARY KEY(id)
+        PRIMARY KEY(repo, hash)
     );
 
     CREATE TABLE key_values (
@@ -41,23 +47,72 @@ def main
     # ----------------------------------------
 
     db = SQL3.connect_or_create(SQLITE_PATH_GIT,create_tables)
+    out SQL3.info(SQLITE_PATH_GIT)
     out br
-
 
     view = p[:view] || 'list'
 
-    menus = ["list"]
+    insert_git_log(db) if view == 'import'
+
+    menus = ["list","import","db_stat","local_repo"]
     menus.each do |v|
         disp = (v == view ? sRed(v) : v)
         out a_tag(disp,'?view=' + v) + spc
     end
     out br
 
+    v_local_repo(db) if view == 'local_repo'
+    v_db_stat(db) if view == 'db_stat'
     v_repo(p) if view == 'repo'
     v_list(p) if view == "list"
 end
 
+def v_local_repo(db)
 
+        shell ='find ~ -path "./.Trash" -prune -o -maxdepth 7 -type d -name ".git" -print 2>/dev/null'
+
+        ret = run_shell(shell )
+        out br
+        out ret.nl2br
+end
+
+def v_db_stat(db)
+
+    ret = sqlite2hash("select repo,count(*),max(commit_date),min(commit_date) ct from commits group by repo",db)
+    out hash2html(ret)
+
+    out br
+    ret.each do |row|
+        out sBlue(row['repo']) + spc
+        ret = sqlite2hash("select * from commits where repo='" + row['repo'] + "' limit 5",db)
+        out hash2html(ret) + br
+
+    end
+end
+
+def insert_git_log(db)
+
+    GIT_REPOS.each do |repo |
+        home = `echo $HOME`.strip
+        dir = home + repo
+        return unless dir_exist?(dir)
+        out dir + br
+        Dir.chdir(dir) do
+            # git log 3件
+            commits = recent_commits(false)
+            #out hash2html(commits)
+
+            # insert
+            commits.each do |row|
+                sql = "insert into commits
+                  (repo , hash , author , message ,commit_date,created_at)
+                  values ('" + File.basename(repo) + "','" + row['hash'] + "','" + row['author'].gsub("'", "''") + "','" + row['message'].gsub("'", "''") + "','" + row['date'] + "','" + now_time_str + "') "
+                sqlite2hash(sql,db)
+            end
+        end
+    end
+
+end
 
 
 def v_repo(p)
@@ -82,11 +137,11 @@ def v_repo(p)
         commits = recent_commits(limit)
         commit_records = commits.map do |row|
             row['date'] = Time.parse(row['date']).strftime(TIME_FMT.YYYYMMDDHHIISS)
-            row['desc'] =row['desc'].trim_spreadable(70)
+            row['message'] =row['message'].trim_spreadable(70)
             row['author'] =row['author'].trim_spreadable(15)
             row
         end
-         out hash2html_nohead(commit_records)
+        out hash2html_nohead(commit_records)
     end
 end
 
@@ -152,7 +207,7 @@ def v_list(p)
                 end
 
                 row['date'] = day_str
-                row['desc'] =row['desc'].trim_spreadable(20)
+                row['message'] =row['message'].trim_spreadable(20)
                 row['author'] =row['author'].trim_spreadable(15)
                 row.delete('hash')
 
@@ -191,11 +246,13 @@ end
 
 
 # 現在dir変更してから呼ぶ
-def recent_commits(limit)
+def recent_commits(limit = false)
 
-    logs = run_shell("git log --oneline --pretty=format:'%an\t%ad\t%h\t%s'  --date=format:'%Y-%m-%d %H:%M:%S' | head -" + limit.to_s, false)
+    shell = "git log --oneline --pretty=format:'%an\t%ad\t%h\t%s'  --date=format:'%Y-%m-%d %H:%M:%S' "
+    shell += " | head -" + limit.to_s if limit
+    logs = run_shell(shell, false)
 
-    hashes = logs.split_nl.map { |line| array2hash(line.split_tab,["author","date","hash","desc"]) }
+    hashes = logs.split_nl.map { |line| array2hash(line.split_tab,["author","date","hash","message"]) }
     return hashes
 end
 

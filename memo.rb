@@ -155,6 +155,8 @@ def v_edit(p,db)
     ret.each do |row|
 
         row_ct = row['text'].split_nl.length
+        textarea_rows = 20
+        textarea_rows = row_ct + 10 if (row_ct > 15)
 
         out '<form method="post" view="?">'
         out i_hidden 'upd','edit_submit'
@@ -162,7 +164,7 @@ def v_edit(p,db)
         out i_hidden 'id',id
         out i_text('title',row['title'],80)
         out br
-        out i_textarea('text', row['text'], 120, row_ct)
+        out i_textarea('text', row['text'], 120, textarea_rows)
         out i_submit '更新'
         out '</form><hr/>'
     end
