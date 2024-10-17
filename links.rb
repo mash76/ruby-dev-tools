@@ -24,6 +24,9 @@ def main
     # ajax ----------------------------------------
     ajax_link(p,db)
 
+    upd = p[:upd].to_s
+    insert_link(p,db,p[:name],p[:href],p[:shortcut]) if upd == 'add_link'
+
     # ----------------------------------------
 
 
@@ -59,8 +62,10 @@ def v_apps(p,db)
     apps = run_shell(shell).split_nl
     out br
     apps.each do |line|
-        file_name = File.basename(line)
-        out line.gsub(file_name,sBlue(file_name)) + br
+        app_folder_name = File.basename(line)
+        name = app_folder_name.gsub('.app','')
+        sc = name.gsub(/\s+/,'')
+       out line.gsub(app_folder_name,sBlue(app_folder_name))  + a_tag(' add','?upd=add_link&name=' + name + '&href=' + URI.encode_www_form_component('?ajax=runapp&path=' + name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
     end
 
 
@@ -78,9 +83,12 @@ def v_new(p,db)
     href = p[:href].to_s
     shortcut = p[:shortcut].to_s
 
+
+
     # form
     out '<form id="f1" >'
     out i_hidden("view","new")
+    out i_hidden("upd","add_link")
     out 'name ' + i_text('name',name,40) + br
     out 'href ' + i_text('href',href,85) + br
     out 'shortcut ' + i_text('shortcut',shortcut,15) + br
@@ -88,8 +96,7 @@ def v_new(p,db)
     out i_submit_trans
     out '</form>'
 
-    # insert
-    insert_link(p,db,name,href,shortcut)
+
 end
 
 def v_manage(p,db)
@@ -284,8 +291,8 @@ def v_links(p,db,edit)
                     link_name = row['name']
                     link_name = sGreen(link_name) if row['href'].include?('docs.google.com/spreadsheets')
 
-                    link_name = sRed(link_name) if row['href'].include?('open=')
-                    link_name = sOrange(link_name) if row['href'].include?('runapp=')
+                    link_name = sRed(link_name) if row['href'].include?('ajax=open')
+                    link_name = sOrange(link_name) if row['href'].include?('ajax=runapp')
                     link_name = sBlue(link_name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
 
                     out '<a style="background:#f2f2ff;"
