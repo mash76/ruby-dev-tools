@@ -3,6 +3,7 @@ require 'json'
 require 'sqlite3'
 require 'uri'
 require 'erb'
+require 'shellwords'
 
 NO_DISP = false
 

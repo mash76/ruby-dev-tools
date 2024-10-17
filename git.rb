@@ -43,7 +43,10 @@ def main
 
     p = $params
 
+    ajax(p)
+
     out html_header("git")
+    out '<script>' + File.read("_form_events.js") + '</script>'
     out menu(__FILE__)
     # ----------------------------------------
 
@@ -55,26 +58,40 @@ def main
 
     insert_git_log(db) if view == 'import'
 
-    menus = ["list","import","db_stat","local_repo"]
+    menus = ["list","import","db_stat","local_repo",'pull']
     menus.each do |v|
         disp = (v == view ? sRed(v) : v)
         out a_tag(disp,'?view=' + v) + spc
     end
     out br
 
+    v_pull(db) if view == 'pull'
     v_local_repo(db) if view == 'local_repo'
     v_db_stat(db) if view == 'db_stat'
-    v_repo(p) if view == 'repo'
-    v_list(p) if view == "list"
+    v_repo(p,db) if view == 'repo'
+    v_list(p,db) if view == "list"
 end
 
 def v_local_repo(db)
 
         shell ='find ~  -maxdepth 7 -type d -name ".git"  2>/dev/null'
-
         ret = run_shell(shell )
         out br
         out ret.nl2br
+end
+
+def v_pull(db)
+    GIT_REPOS.each do |repo |
+        home = `echo $HOME`.strip
+        dir = home + repo
+        return unless dir_exist?(dir)
+        out sBlue(dir) + br
+        Dir.chdir(dir) do
+            shell = 'git pull'
+            ret = run_shell(shell)
+            out br + ret.nl2br + br
+        end
+    end
 end
 
 def v_db_stat(db)
@@ -100,46 +117,87 @@ def insert_git_log(db)
         out dir + br
         Dir.chdir(dir) do
             # git log 3件
-            commits = recent_commits(false)
-            #out hash2html(commits)
+            # commits = recent_commits(false)
+            # # insert
+            # commits.each do |row|
+            #     sql = "insert into commits
+            #       (repo , hash , author , message ,commit_date,created_at)
+            #       values ('" + File.basename(repo) + "','" + row['hash'] + "','" + row['author'].gsub("'", "''") + "','" + row['message'].gsub("'", "''") + "','" + row['date'] + "','" + now_time_str + "') "
+            #     sqlite2hash(sql,db)
+            # end
 
-            # insert
-            commits.each do |row|
-                sql = "insert into commits
-                  (repo , hash , author , message ,commit_date,created_at)
-                  values ('" + File.basename(repo) + "','" + row['hash'] + "','" + row['author'].gsub("'", "''") + "','" + row['message'].gsub("'", "''") + "','" + row['date'] + "','" + now_time_str + "') "
-                sqlite2hash(sql,db)
+
+
+            shell = 'git log --numstat  --oneline'
+            ret = run_shell(shell)
+            rets = ret.split_nl
+
+            commit_details = {}
+            hash = ""
+
+            rets.each do |log_line|
+                # 10文字の英数 + 空白で始まっていたら
+                puts log_line
+                if log_line =~ /^([0-9a-f]{7,10})\s/
+                    hash = $1
+                    out hash + br
+                    commit_details[hash] = {files: 0,adds: 0,dels: 0}
+
+                else
+                    # add del filename
+
+                    commit_details[hash][:files] += 1
+                    elements = log_line.split(/\s+/)
+                    commit_details[hash][:adds] += elements[0].to_i
+                    commit_details[hash][:dels] += elements[1].to_i
+                end
             end
+            out commit_details.inspect
         end
     end
 
 end
 
 
-def v_repo(p)
+def v_repo(p,db)
 
     limit = 120
     home = `echo $HOME`.strip
-   p[:repo]
 
     Dir.chdir(p[:repo]) do
-        out s150(sBlue(p[:repo])) + spc
+        out s150(sBlue(File.basename(p[:repo]))) + spc
 
         branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
         out spc +  branche_ct
 
         repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
-        out spc +  repo_start_date
+        out spc + repo_start_date
 
         ["7","100"].each do | days|
             out stat_period_commit_peson(days)
         end
 
-        commits = recent_commits(limit)
-        commit_records = commits.map do |row|
-            row['date'] = Time.parse(row['date']).strftime(TIME_FMT.YYYYMMDDHHIISS)
-            row['message'] =row['message'].trim_spreadable(70)
-            row['author'] =row['author'].trim_spreadable(15)
+        out a_tag('dir' , "javascript:openFile('" + p[:repo] + "')")
+
+        filter = p[:filter] || ""
+        limit = p[:limit] || 2000
+        out '<form id="f1" method="get" action="?">'
+        out i_hidden("view","repo")
+        out i_hidden("repo",p[:repo])
+        out 'filter ' + i_text("filter",filter,40) + br
+        out 'limit ' + i_text("limit",limit.to_s) + br
+        out i_submit_trans
+        out '</form>'
+
+        sql = "select author,commit_date,message,hash from commits where repo='" + File.basename(p[:repo]) + "' "
+        sql += " and (author like '%" + filter + "%' or message like '%" + filter + "%' ) " if filter.length > 0
+        sql += "order by commit_date desc limit " + limit.to_s
+        recent_logs = sqlite2hash(sql,db)
+
+        commit_records = recent_logs.map do |row|
+            row['commit_date'] = Time.parse(row['commit_date']).strftime(TIME_FMT.YYYYMMDDHHIISS)
+            row['message'] =color_val(row['message'],filter) if filter.length > 0
+            row['author'] = color_val(row['author'],filter) if filter.length > 0
             row
         end
         out hash2html_nohead(commit_records)
@@ -147,7 +205,7 @@ def v_repo(p)
 end
 
 
-def v_list(p)
+def v_list(p,db)
 
     home = `echo $HOME`.strip
 
@@ -170,22 +228,21 @@ def v_list(p)
 
 
             # 開始日
-            repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
-            start = Time.parse(repo_start_date)
-            years = ((Time.now - start) / (86400.0 * 365.0)).round(2).to_s
-            html <<  years + sSilver('years')
-            html <<  spc + start.strftime(TIME_FMT.YYYYMM)
-            html <<  spc
+            # repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
+            # start = Time.parse(repo_start_date)
+            # years = ((Time.now - start) / (86400.0 * 365.0)).round(2).to_s
+            # html <<  years + sSilver('years')
+            ret = sqlite2hash("select min(commit_date) start,count(*) commit_ct from commits where repo='" + File.basename(repo) + "'",db,false)
+            start = ret[0]['start']
+            html <<  spc + Time.parse(start).strftime(TIME_FMT.YYYYMM) <<  spc
 
             html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip + br
-
+            html <<  spc +  ret[0]['commit_ct'].to_s
             # configs = run_shell("git config --list")
             # html <<  br + configs.nl2br.trim_spreadable(30)
             # html <<  br
 
-            html <<  sBG("commits ")
-            branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
-            html <<  spc +  branche_ct
+
 
 
 
@@ -195,9 +252,12 @@ def v_list(p)
             end
 
             # log
-            recent_logs = recent_commits(LIST_LOG_LIMIT)
+           # recent_logs = recent_commits(LIST_LOG_LIMIT)
+
+           recent_logs = sqlite2hash("select author,commit_date,message,hash from commits where repo='" + File.basename(repo) + "' order by commit_date desc limit " + LIST_LOG_LIMIT.to_s,db,false)
+
             hashes = recent_logs.map do |row|
-                day = Time.parse(row['date'])
+                day = Time.parse(row['commit_date'])
                 day_str = day.strftime(TIME_FMT.YYMMDD)
                 if Time.now - day < 86400 * 1
                     day_str = sRed(day_str)
@@ -207,7 +267,7 @@ def v_list(p)
                     day_str = sSilver(day_str)
                 end
 
-                row['date'] = day_str
+                row['commit_date'] = day_str
                 row['message'] =row['message'].trim_spreadable(20)
                 row['author'] =row['author'].trim_spreadable(15)
                 row.delete('hash')
