@@ -6,7 +6,7 @@
 
 LIST_LOG_LIMIT = 20
 GIT_SHOW_SHELL = false
-SQLITE_PATH_GIT = 'files/git3.sql3'
+SQLITE_PATH_GIT = 'files/git.sql3'
 
 def create_tables
 
@@ -15,7 +15,8 @@ def create_tables
 	repo_name	TEXT,
 	remote	TEXT,
 	created_at	TEXT,
-	PRIMARY KEY(local_full_path);
+	PRIMARY KEY(local_full_path)
+    );
 
     CREATE TABLE commits (
         repo   TEXT,
