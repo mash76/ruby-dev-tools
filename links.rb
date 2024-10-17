@@ -254,14 +254,24 @@ def v_links(p,db,edit)
                     out sBold(sGray(cate1_row['name']))
 
                     # グレーで、mouseoverで追加ボタン強調
-                    out sBold(' <a id="cate_add_a_' + cate1_id.to_s + '" href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style=" display_none; color:#eee;">+</a>')
+                    out sBold(' <a id="cate_add_a_' + cate1_id.to_s + '" href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style="  color:#eee;">+</a>')
+
+
+                    out sBold(' <a id="cate1_edit_' + cate1_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate1&pk=' + cate1_id.to_s + '&view=row_edit" style="  color:#eee;">e</a>')
                     out '</div>'
+
                 else
                     out s150(sSilver(cate1_row['name']))
                 end
             end
-            out '</td><td style="' + style + ' width:120px; ">'
+
+            out '</td><td type="cate2_div" cate2_id="'+ cate2_id.to_s + '" style="' + style + ' width:120px; ">'
+
+            # cate2
             out spc + spc + spc + cate2_row['name'] + spc
+
+            out sBold('<a id="cate2_edit_' + cate2_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate2&pk=' + cate2_id.to_s + '&view=row_edit" style="  color:#eee;">e</a>')
+
             out '</td><td style="' + style + ' width:1200px;">'
 
             #表示 個別リンク
@@ -271,12 +281,12 @@ def v_links(p,db,edit)
                 links[cate1_id][cate2_id].each do |row|
 
                     # dir www app で色変える
-                    name = row['name']
-                    name = sGreen(name) if row['href'].include?('docs.google.com/spreadsheets')
+                    link_name = row['name']
+                    link_name = sGreen(link_name) if row['href'].include?('docs.google.com/spreadsheets')
 
-                    name = sRed(name) if row['href'].include?('open=')
-                    name = sOrange(name) if row['href'].include?('runapp=')
-                    name = sBlue(name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
+                    link_name = sRed(link_name) if row['href'].include?('open=')
+                    link_name = sOrange(link_name) if row['href'].include?('runapp=')
+                    link_name = sBlue(link_name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
 
                     out '<a style="background:#f2f2ff;"
                             onclick="addLinkCount(' + row["id"].to_s + ')"
@@ -285,7 +295,7 @@ def v_links(p,db,edit)
                             title="' + row['shortcut'] + '"
                             draggable="true"
                             sc="' + row['shortcut'] + '"
-                            href="' + row['href'] + '">' + name + '</a>'
+                            href="' + row['href'] + '">' + link_name + '</a>'
 
                     # editモードの場合
                     if edit == 'on'

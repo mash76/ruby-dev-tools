@@ -245,12 +245,28 @@
         $('div[type=cate1_div]').mouseenter((e) => {
             clog('enter ' + e.target.tagName)
             const cate1_id = $(e.target).attr('cate1_id')
-            $('#cate_add_a_' + cate1_id).css('color','dodgerBlue')
+            $('#cate_add_a_' + cate1_id).css('color','lightskyblue')
+            $('#cate1_edit_' + cate1_id).css('color','lightskyblue')
         })
         $('div[type=cate1_div]').mouseleave((e) => { // mouseoutでなくmouseleave
             clog('leave  ' + e.target.tagName)
             const cate1_id = $(e.target).attr('cate1_id')
             $('#cate_add_a_' + cate1_id).css('color','#eee')
+            $('#cate1_edit_' + cate1_id).css('color','#eee')
+        })
+
+        $('td[type=cate2_div]').mouseenter((e) => {
+            clog('enter ' + e.target.tagName)
+            const cate2_id = $(e.target).attr('cate2_id')
+            clog(cate2_id)
+            //  $('#cate_add_a_' + cate1_id).css('color','lightskyblue')
+            $('#cate2_edit_' + cate2_id).css('color','lightskyblue')
+        })
+        $('td[type=cate2_div]').mouseleave((e) => { // mouseoutでなくmouseleave
+            clog('leave  ' + e.target.tagName)
+            const cate2_id = $(e.target).attr('cate2_id')
+         //   $('#cate_add_a_' + cate1_id).css('color','#eee')
+            $('#cate2_edit_' + cate2_id).css('color','#eee')
         })
 
 

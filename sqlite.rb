@@ -41,6 +41,7 @@ def main
 end
 
 def update(p,db)
+
     col_infos = table_cols_info(db,p['table'])
     pk_col_name = pk_col_name(col_infos)
 
@@ -58,6 +59,7 @@ def update(p,db)
 end
 
 def v_db_list()
+
     db_files = run_shell("ls files/*.sql3").strip.split_nl
     out br
     dbs = []
@@ -103,13 +105,10 @@ def v_db_detail(p,db,sqlite_path)
     indexes = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='index' ",db)
     out hash2html(indexes)
 
-
-
     tables_indexes = sqlite2hash("SELECT type,name,'' cols,'' rows,rootpage,sql FROM sqlite_master  ",db,NO_DISP)
     tables_indexes.each do |row|
         out '<pre>' + row['sql'] + ';</pre>' if row['sql']
     end
-
 
     tables2 = sqlite2hash("SELECT type,name,rootpage,sql FROM sqlite_master WHERE type='table' ",db)
     out br

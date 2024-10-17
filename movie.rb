@@ -4,36 +4,6 @@ MOVIE_PATH = File.expand_path("../../movie")
 SQLITE_PATH = File.expand_path("files/movie.sql3")
 CACHE_KEY_NAME = 'movie_filename_count_cahce'
 
-# パラメータがなければエラー
-def p_requires(array)
-    array.each do |key|
-        unless $params.key?(key)
-            out sRed("require paramss" + array.inspect)
-            return false
-        end
-    end
-    true
-end
-
-def p_exist?(key)
-    $params.key?(key) && $params[key].is_a?(String) && $params[key].length > 0
-end
-
-def ajax_cout_update(db,inode)
-
-    sql_update = "update movies
-        set view_times = view_times +1,
-        last_view_date = '" + now_time_str + "'
-        where inode=" + inode.to_s
-    sqlite2hash(sql_update,db)
-
-    sql_select = "select * from movies where inode=" + inode.to_s
-    row = sqlite2hash(sql_select,db)
-    shell = 'open "' + MOVIE_PATH + row[0]['filepath'] + '"'
-    puts shell
-    run_shell(shell)
-end
-
 def main()
 
 	db = SQL3.connect_or_create(SQLITE_PATH,create_tables)
@@ -759,6 +729,38 @@ def update_edit_time(inode,filepath,db)
     sql_upd_time = "update movies set ctime='" + stat.ctime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "',atime='" + stat.atime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "',mtime='" + stat.mtime.strftime(TIME_FMT.YYYYMMDDHHIISS) + "' where inode=" + inode.to_s
     sqlite2hash(sql_upd_time,db)
 end
+
+def p_exist?(key)
+    $params.key?(key) && $params[key].is_a?(String) && $params[key].length > 0
+end
+
+def ajax_cout_update(db,inode)
+
+    sql_update = "update movies
+        set view_times = view_times +1,
+        last_view_date = '" + now_time_str + "'
+        where inode=" + inode.to_s
+    sqlite2hash(sql_update,db)
+
+    sql_select = "select * from movies where inode=" + inode.to_s
+    row = sqlite2hash(sql_select,db)
+    shell = 'open "' + MOVIE_PATH + row[0]['filepath'] + '"'
+    puts shell
+    run_shell(shell)
+end
+
+# パラメータがなければエラー
+def p_requires(array)
+    array.each do |key|
+        unless $params.key?(key)
+            out sRed("require paramss" + array.inspect)
+            return false
+        end
+    end
+    true
+end
+
+
 
 def create_tables
    " CREATE TABLE movies (

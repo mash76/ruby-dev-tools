@@ -6,6 +6,31 @@
 
 LIST_LOG_LIMIT = 20
 GIT_SHOW_SHELL = false
+SQLITE_PATH_GIT = 'files/git.sql3'
+
+def create_tables
+
+    " CREATE TABLE commits (
+        id	INTEGER,
+        repo   TEXT,
+        hash	TEXT,
+        author TEXT,
+        message TEXT,
+        commit_date TEXT,
+        files_ct INTEGER,
+        add_line_ct INTEGER,
+        del_line_ct INTEGER,
+        last_view_date	TEXT,
+        created_at	TEXT,
+        PRIMARY KEY(id)
+    );
+
+    CREATE TABLE key_values (
+        key	TEXT NOT NULL UNIQUE,
+        value	TEXT
+    );"
+
+end
 
 def main
 
@@ -15,10 +40,13 @@ def main
     out menu(__FILE__)
     # ----------------------------------------
 
+    db = SQL3.connect_or_create(SQLITE_PATH_GIT,create_tables)
+    out br
+
 
     view = p[:view] || 'list'
 
-    menus = ["list","repo"]
+    menus = ["list"]
     menus.each do |v|
         disp = (v == view ? sRed(v) : v)
         out a_tag(disp,'?view=' + v) + spc
@@ -39,7 +67,7 @@ def v_repo(p)
    p[:repo]
 
     Dir.chdir(p[:repo]) do
-        out s120(sBlue(p[:repo])) + spc
+        out s150(sBlue(p[:repo])) + spc
 
         branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
         out spc +  branche_ct
@@ -80,18 +108,20 @@ def v_list(p)
 
             html <<  '<div class="flex-item" >'
 
-            html <<  a_tag( s120(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + URI.encode_www_form_component(dir))
+            html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + URI.encode_www_form_component(dir))
 
             remotes = run_shell("git remote -v" ,false)
 
-            html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip + spc
+
             # 開始日
             repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
             start = Time.parse(repo_start_date)
             years = ((Time.now - start) / (86400.0 * 365.0)).round(2).to_s
             html <<  years + sSilver('years')
             html <<  spc + start.strftime(TIME_FMT.YYYYMM)
-            html <<  br
+            html <<  spc
+
+            html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip + br
 
             # configs = run_shell("git config --list")
             # html <<  br + configs.nl2br.trim_spreadable(30)
