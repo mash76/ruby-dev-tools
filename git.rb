@@ -35,12 +35,12 @@ end
 
 def v_repo(p)
 
-    limit = 40
+    limit = 120
     home = `echo $HOME`.strip
    p[:repo]
 
     Dir.chdir(p[:repo]) do
-        out p[:repo] + spc
+        out s120(sBlue(p[:repo])) + spc
 
         branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
         out spc +  branche_ct
@@ -48,12 +48,9 @@ def v_repo(p)
         repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
         out spc +  repo_start_date
 
-
-
         ["7","100"].each do | days|
             out stat_period_commit_peson(days)
         end
-
 
         commits = recent_commits(limit)
         commit_records = commits.map do |row|
@@ -84,7 +81,7 @@ def v_list(p)
 
             html <<  '<div class="flex-item" >'
 
-            html <<  a_tag(sBlueBG(repo), '?view=repo&repo=' + URI.encode_www_form_component(dir))
+            html <<  a_tag( s120(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + URI.encode_www_form_component(dir))
 
             remotes = run_shell("git remote -v" ,false)
 
@@ -128,6 +125,8 @@ def v_list(p)
                 row['date'] = day_str
                 row['desc'] =row['desc'].trim_spreadable(20)
                 row['author'] =row['author'].trim_spreadable(15)
+                row.delete('hash')
+
                 row
             end
             html <<  hash2html_nohead(hashes)
