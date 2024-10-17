@@ -27,7 +27,7 @@ end
 $id_index = 0
 
 class String
-  def nl2br() return self.gsub(/\n/, '<br/>') end
+  def nl2br() return self.gsub(/\n/, "<br/>\n") end
   def trim(length=30)
     len = self.length
     str = self.gsub(/\n/,'').gsub(/<br\/?>/i,'')[0, length]  # brと \n を除去して trim
@@ -186,9 +186,9 @@ def hash2html_nohead(hashes,p_class = "border")
   html = "<table class='" + p_class + "'>\n"
 
   hashes.each do |row|
-      html << '<tr>'
-      row.each { |key,value | html << '<td nowrap>' + value.to_s + "</td>\n"  }
-      html << "</tr>\n"
+      html << ' <tr>'
+      row.each { |key,value | html << '  <td nowrap>' + value.to_s + "</td>\n"  }
+      html << " </tr>\n"
   end
   html << "</table>\n"
   html
@@ -205,13 +205,13 @@ def hash2html(hashes,p_class = "border")
   return '' if hashes.length == 0
 
   html = "<table class='" + p_class + "'><tr>"
-  hashes[0].each  { | key,value | html << '<th nowrap>' + key.to_s + "</th>\n" }
-  html << "</tr>\n"
+  hashes[0].each  { | key,value | html << '  <th nowrap>' + key.to_s + "</th>\n" }
+  html << " </tr>\n"
 
   hashes.each do |row|
-      html << '<tr>'
-      row.each { |key,value | html << '<td nowrap>' + value.to_s + "</td>\n"  }
-      html << "</tr>\n"
+      html << ' <tr>'
+      row.each { |key,value | html << '  <td nowrap>' + value.to_s + "</td>\n"  }
+      html << " </tr>\n"
   end
   html << "</table>\n"
   html
