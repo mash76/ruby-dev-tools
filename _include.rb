@@ -319,9 +319,9 @@ def fill_hash_cols(hashes,colnames_ary)
   end
   ret_hashes
 end
-def a_tag(name,href,title ="") return '<a title="' + title + '" href="' + href + '" >' + name + '</a>' end
+def a_tag(name,href,title ="") return '<a title="' + title + '" href="' + href + '" >' + name + '</a>' + "\n" end
 
-  def a_tag_bg(name,href,title ='') return '<a title="' + title + '" href="' + href + '" style="background:#f4f4ff;" >' + name + '</a>' end
+def a_tag_bg(name,href,title ='') return '<a title="' + title + '" href="' + href + '" style="background:#f4f4ff;" >' + name + '</a>' + "\n" end
 
 
 
@@ -446,7 +446,7 @@ def menu(filename = "")
   files.each do | fname|
     menu_name = fname.gsub(".rb","")
     disp = (filename == menu_name ? sRed(menu_name) : menu_name)
-    html << '<a href="/dev/' << menu_name << '">' << disp << '</a> '
+    html << '<a href="/dev/' << menu_name << '">' << disp << '</a> ' << "\n"
   end
   html << "<hr/>"
   html
