@@ -4,9 +4,7 @@ require 'sqlite3'
 require 'uri'
 require 'erb'
 
-
 NO_DISP = false
-
 
 def ffprobe_streams(path)
 	  path_esc = path.gsub('"','\"')
@@ -185,14 +183,14 @@ def hash2html_nohead(hashes,p_class = "border")
   end
   return '' if hashes.length == 0
 
-  html = "<table class='" + p_class + "'>"
+  html = "<table class='" + p_class + "'>\n"
 
   hashes.each do |row|
       html << '<tr>'
-      row.each { |key,value | html << '<td nowrap>' + value.to_s + '</td>'  }
-      html << '</tr>'
+      row.each { |key,value | html << '<td nowrap>' + value.to_s + "</td>\n"  }
+      html << "</tr>\n"
   end
-  html << '</table>'
+  html << "</table>\n"
   html
 end
 
@@ -207,15 +205,15 @@ def hash2html(hashes,p_class = "border")
   return '' if hashes.length == 0
 
   html = "<table class='" + p_class + "'><tr>"
-  hashes[0].each  { | key,value | html << '<th nowrap>' + key.to_s + '</th>' }
-  html << '</tr>'
+  hashes[0].each  { | key,value | html << '<th nowrap>' + key.to_s + "</th>\n" }
+  html << "</tr>\n"
 
   hashes.each do |row|
       html << '<tr>'
-      row.each { |key,value | html << '<td nowrap>' + value.to_s + '</td>'  }
-      html << '</tr>'
+      row.each { |key,value | html << '<td nowrap>' + value.to_s + "</td>\n"  }
+      html << "</tr>\n"
   end
-  html << '</table>'
+  html << "</table>\n"
   html
 end
 

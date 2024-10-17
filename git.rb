@@ -5,7 +5,6 @@
 # git clone https://github.com/electron/electron.git
 
 LIST_LOG_LIMIT = 20
-
 GIT_SHOW_SHELL = false
 
 def main
