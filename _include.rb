@@ -230,6 +230,7 @@ end
 TIME_FMT = OpenStruct.new
 TIME_FMT.YYYYMMDDHHIISS = '%Y-%m-%d %H:%M:%S'
 TIME_FMT.YYYYMMDD = '%Y-%m-%d'
+TIME_FMT.YYYYMM = '%Y-%m'
 TIME_FMT.YYMMDD = '%y-%m-%d'
 TIME_FMT.HHIISS = '%H:%M:%S'
 

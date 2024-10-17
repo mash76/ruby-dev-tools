@@ -48,6 +48,8 @@ def v_repo(p)
         repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
         out spc +  repo_start_date
 
+
+
         ["7","100"].each do | days|
             out stat_period_commit_peson(days)
         end
@@ -70,67 +72,87 @@ def v_list(p)
     home = `echo $HOME`.strip
 
     out '<div class="flex-container" >'
+    htmls = {}
 
     GIT_REPOS.each do |repo |
 
         dir = home + repo
         return unless dir_exist?(dir)
+
+        html = ''
         Dir.chdir(dir) do
 
-            out '<div class="flex-item" >'
+            html <<  '<div class="flex-item" >'
 
-            out a_tag(sBlueBG(repo), '?view=repo&repo=' + URI.encode_www_form_component(dir))
+            html <<  a_tag(sBlueBG(repo), '?view=repo&repo=' + URI.encode_www_form_component(dir))
 
             remotes = run_shell("git remote -v" ,false)
-            # out br + remotes.nl2br
-            # out br
-            out a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip + br
-            configs = run_shell("git config --list")
-            out br + configs.nl2br.trim_spreadable(30)
-            out br
 
-            out sBG("commits ")
-            branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
-            out spc +  branche_ct
-
+            html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip + spc
+            # 開始日
             repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
-            out spc +  repo_start_date
+            start = Time.parse(repo_start_date)
+            years = ((Time.now - start) / (86400.0 * 365.0)).round(2).to_s
+            html <<  years + sSilver('years')
+            html <<  spc + start.strftime(TIME_FMT.YYYYMM)
+            html <<  br
 
-            out ' - '
+            # configs = run_shell("git config --list")
+            # html <<  br + configs.nl2br.trim_spreadable(30)
+            # html <<  br
+
+            html <<  sBG("commits ")
+            branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
+            html <<  spc +  branche_ct
+
+
+
+            html <<  ' - '
             ["7","100"].each do | days|
-                out stat_period_commit_peson(days)
+                html <<  stat_period_commit_peson(days)
             end
-
-
 
             # log
             recent_logs = recent_commits(LIST_LOG_LIMIT)
             hashes = recent_logs.map do |row|
-                row['date'] = Time.parse(row['date']).strftime(TIME_FMT.YYMMDD)
+                day = Time.parse(row['date'])
+                day_str = day.strftime(TIME_FMT.YYMMDD)
+                if Time.now - day < 86400 * 1
+                    day_str = sRed(day_str)
+                elsif Time.now - day < 86400 * 3
+                    day_str = sOrange(day_str)
+                elsif Time.now - day > 86400 * 100
+                    day_str = sSilver(day_str)
+                end
+
+                row['date'] = day_str
                 row['desc'] =row['desc'].trim_spreadable(20)
                 row['author'] =row['author'].trim_spreadable(15)
                 row
             end
-            out hash2html_nohead(hashes)
+            html <<  hash2html_nohead(hashes)
 
-            out br + sBG("local branches ")
-            branches = run_shell "git branch" #
-            out br + branches.nl2br
+            html <<  br + sBG("local branches ")
+            branches = run_shell("git branch",false) #
+            html <<  br + branches.nl2br
 
-            out br + sBG("remote branches ")
-            branches = run_shell "git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:short) %(refname:short)' | head -10" # git branch -r
-            r_branches = branches.split_nl
-            out br
-            r_branches.each do |line|
-                out line.trim_spreadable(45) + br
-            end
+            # html <<  br + sBG("remote branches ")
+            # branches = run_shell "git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:short) %(refname:short)' | head -10"
+            # r_branches = branches.split_nl
+            # html <<  br
+            # r_branches.each do |line|
+            #     html <<  line.trim_spreadable(45) + br
+            # end
 
-            out br + sBG("tags ")
-            branches = run_shell "git tag --sort=-creatordate | head -15" #
-            out br + branches.nl2br
-
+            # html <<  br + sBG("tags ")
+            # branches = run_shell "git tag --sort=-creatordate | head -15" #
+            # html <<  br + branches.nl2br
         end
-        out '</div>'
+        html <<  '</div>'
+        htmls[dir] = html
+    end
+    htmls.each do |key,html2|
+        out html2
     end
     out '</div>'
 
@@ -152,7 +174,7 @@ end
 def stat_period_commit_peson(days)
 
     html = ""
-    html << sOrange(days + 'day ')
+    html << sOrange(days + 'd ')
     log_days = run_shell(' git rev-list --count --since="' + days + ' days ago" HEAD ' , GIT_SHOW_SHELL) #
     html << log_days
 
