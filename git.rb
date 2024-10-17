@@ -70,7 +70,7 @@ end
 
 def v_local_repo(db)
 
-        shell ='find ~ -path "./.Trash" -prune -o -maxdepth 7 -type d -name ".git" -print 2>/dev/null'
+        shell ='find ~  -maxdepth 7 -type d -name ".git"  2>/dev/null'
 
         ret = run_shell(shell )
         out br
