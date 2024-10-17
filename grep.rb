@@ -17,17 +17,18 @@ def main
     # ----------------------------------------
 
 
-    path = p[:path] || GREP_PATHS[0]
-    GREP_PATHS.each do | path |
-        out a_tag(File.basename(path) , "?path=" + URI.encode_www_form_component(path)) + spc
+    path = p[:path] || GREP_PATHS[0]['path']
+    path_id = 0
+    GREP_PATHS.each_with_index do | hash,index |
+        out a_tag(File.basename(hash['path']) , "?path=" + URI.encode_www_form_component(hash['path'])) + spc
+        path_id = index if hash['path'] == path
     end
     out br
-
     out s150(sBlue(path)) + br
 
 
     filter = p[:filter].to_s
-    exclude = p[:exclude] || ".git"
+    exclude = p[:exclude] || GREP_PATHS[path_id]['exclude']
     recent = p[:recent] || ""
 
     db = SQL3.connect_or_create(SQLITE_PATH_GREP,create_tables)
@@ -49,9 +50,9 @@ def main
     # form
     out '<form id="f1" method="post" action="?">'
     out i_hidden("path",path)
-    out i_text("filter",filter) + br
+    out 'filter ' + i_text("filter",filter,30) + br
 
-    out 'exclude ' + i_text("exclude",exclude) + br
+    out 'exclude ' + i_text("exclude",exclude,30) + br
     out 'recent ' + i_text("recent",recent) + br
     out i_submit_trans "検索"
     out "</form><hr/>"
@@ -60,7 +61,10 @@ def main
     shell = 'find "' + path + '" -type f '
     shell += ' -mtime -' + recent if recent.length > 0
     shell += ' | grep -i "' + Regexp.escape(filter) + '"' if filter.length > 0
-    shell += ' | grep -iv "' + Regexp.escape(exclude) + '"' if exclude.length > 0
+    excludes = exclude.split(/\s+/)
+    excludes.each do |word|
+        shell += ' | grep -iv "' + Regexp.escape(word) + '"' if word.length > 0
+    end
 
     files_str = run_shell(shell )
     files2 = files_str.split_nl
@@ -80,7 +84,11 @@ def ext_stat( path, filter, exclude )
     out sBlue('extention stat') + br
 
     shell = 'find "' + path + '" -type f '
-    shell += ' | grep  "' + exclude + '"' if exclude.length > 0
+    excludes = exclude.split(/\s+/)
+    excludes.each do |word|
+        shell += ' | grep -iv "' + word + '"' if word.length > 0
+    end
+
     files_str = run_shell(shell ,false)
     files = files_str.split_nl
     stat = {}
