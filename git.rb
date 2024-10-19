@@ -55,17 +55,18 @@ def v_pull(db)
     threads = []
     GIT_REPOS.each do |repo |
         threads << Thread.new do
-            dir = home + repo
-            return unless dir_exist?(dir)
-            shell_remote = 'git -C ' + dir + ' remote get-url origin'
-            remote_url = run_shell(shell_remote,false)
-            # thread内でchdirできない
-            start = Time.now
-            shell_pull = 'git -C ' + dir + ' pull'
-            ret = run_shell(shell_pull,false)
-            html = sBlue(dir) + br + sSilver(shell_remote) + br + sRed('remote ') + remote_url + br
-            html += sSilver(shell_pull) + br + (Time.now - start).round(2).to_s + sSilver('sec') + br
-            out html + ret.nl2br + br
+            dir = repo
+            if dir_exist?(dir)
+                shell_remote = 'git -C ' + dir + ' remote get-url origin'
+                remote_url = run_shell(shell_remote,false)
+                # thread内でchdirできない
+                start = Time.now
+                shell_pull = 'git -C ' + dir + ' pull'
+                ret = run_shell(shell_pull,false)
+                html = sBlue(dir) + br + sSilver(shell_remote) + br + sRed('remote ') + remote_url + br
+                html += sSilver(shell_pull) + br + (Time.now - start).round(2).to_s + sSilver('sec') + br
+                out html + ret.nl2br + br
+            end
         end
     end
     threads.each(&:join)
@@ -87,65 +88,95 @@ end
 
 def insert_git_log(db)
 
+    sqlite2hash('delete from commits', db)
+    out br
+
+    home = `echo $HOME`.strip
+    threads = []
     GIT_REPOS.each do |repo |
-        home = `echo $HOME`.strip
-        dir = home + repo
-        return unless dir_exist?(dir)
-        out dir + br
-        Dir.chdir(dir) do
+        out 'repo ' + repo + br
+        puts 'repo ' + repo + br
+        dir = repo
+        return unless dir_exist?(repo)
+        threads << Thread.new do
+            out dir + now_time_str + br
+            puts now_time_str + br
 
-            commits = recent_commits(false)
-
-            # insert
-            commits.each do |row|
-
-                # 同じrepo & hashのデータがあればそこで終了
-                sql_check = "select * from commits where repo='" + File.basename(repo) + "' and hash='" + row['hash'] + "'"
-                ret = sqlite2hash(sql_check, db)
-                out br
-                if ret.length == 1
-                    out sRed('data exist break ') + row.inspect + br
-                    break
-                end
-                sql = "insert into commits
-                  (repo , hash , author , message ,commit_date,created_at)
-                  values ('" + File.basename(repo) + "','" + row['hash'] + "','" + row['author'].gsub("'", "''") + "','" + row['message'].gsub("'", "''") + "','" + row['date'] + "','" + now_time_str + "') "
-                sqlite2hash(sql,db)
+            sql_hash_exist_cehck = "select hash from commits where repo='" + File.basename(repo) + "'"
+            imported_list = sqlite2hash(sql_hash_exist_cehck, db)
+            if imported_list.length > 0
+                imported_list = imported_list.map { |row| row['hash'] }
+            else
+                imported_list = []
             end
 
-            shell = 'git log --numstat  --oneline'
+            sql_inserts = ""
+            all_commits = recent_commits(repo,false)
+            all_commits.each do |row|
+                # 同じrepo & hashのデータがあればそこで終了
+
+                out br
+                if imported_list.include?(row['hash'])
+                    out sRed('data exist break ') + row.inspect + br
+                    puts 'data exist break'
+                    break
+                end
+
+                #puts repo + " comm data not in sqlite"
+                sql_inserts << "insert into commits
+                    (repo , hash , author , message ,commit_date,created_at)
+                    values ('" + File.basename(repo) + "','" + row['hash'] + "',
+                    '" + row['author'].gsub("'", "''") + "','" + row['message'].gsub("'", "''") + "',
+                    '" + row['date'] + "','" + now_time_str + "') ;"
+
+                #puts repo + " comm data not in sqlite"
+            end
+            out repo + " batch insert commits " + br
+            puts repo + " batch insert commits "
+            start = Time.now
+            db.execute_batch(sql_inserts)
+            puts repo + "insert end " + (Time.now - start).round(2).to_s
+
+            shell = 'git -C ' + dir + ' log --numstat  --oneline'
             ret = run_shell(shell)
+            out br
             rets = ret.split_nl
 
             commit_details = {}
             hash = ""
-
             rets.each do |log_line|
+                #puts log_line
                 # 10文字の英数 + 空白で始まっていたら
-                puts log_line
                 if log_line =~ /^([0-9a-f]{7,10})\s/
                     hash = $1
-                    out hash + spc
+                    #out hash + spc
                     commit_details[hash] = {files: 0,adds: 0,dels: 0}
-
                 else
                     # add del filename
-
                     commit_details[hash][:files] += 1
                     elements = log_line.split(/\s+/)
                     commit_details[hash][:adds] += elements[0].to_i
                     commit_details[hash][:dels] += elements[1].to_i
                 end
             end
-            out commit_details.inspect
+            #out commit_details.inspect
+            update_sql_batch = ""
             commit_details.each do |commit_hash,row|
-                sql = "update commits set files_ct =" + row[:files].to_s + ",add_line_ct =" + row[:adds].to_s + " , del_line_ct =" + row[:dels].to_s + " where hash='" + commit_hash + "'"
-                sqlite2hash(sql,db)
-            end
+                update_sql_batch << "update commits set
+                    files_ct =" + row[:files].to_s + ",
+                    add_line_ct =" + row[:adds].to_s + " ,
+                    del_line_ct =" + row[:dels].to_s +
+                    " where hash='" + commit_hash + "' ;"
 
+            end
+            puts repo + " batch update detail "
+            out repo + " batch update detail " + br
+            start = Time.now
+            db.execute_batch(update_sql_batch)
+            puts repo + "insert end " + (Time.now - start).round(2).to_s
         end
     end
-
+    threads.each(&:join)
 end
 
 
@@ -203,20 +234,46 @@ def v_repo(p,db)
             out i_submit_trans
             out '</form>'
 
-            sql = "select author,commit_date,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
+            sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
             sql += " and (author like '%" + filter + "%' or message like '%" + filter + "%' ) " if filter.length > 0
             sql += "order by commit_date desc limit " + limit.to_s
             recent_logs = sqlite2hash(sql,db)
 
             commit_records = recent_logs.map do |row|
-                row['commit_date'] = Time.parse(row['commit_date']).strftime(TIME_FMT.YYYYMMDDHHIISS)
+                row['date_'] = format_recent_date(row['date_'])
+                row['author'] = a_tag(row['author'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + URI.encode_www_form_component(repo))
                 row['message'] =color_val(row['message'],filter) if filter.length > 0
-                row['author'] = color_val(row['author'],filter) if filter.length > 0
+                # row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に
+                # row['author'] = color_val(row['author'],filter) if filter.length > 0
                 row
             end
+            commit_records = records_zero_silver(commit_records)
             out hash2html(commit_records)
         end
     end
+
+    if view2 == 'commit_detail'
+        hash = p[:hash]
+        out view2 + spc + hash + br
+        shell = 'git -C ' + repo  + ' show ' + hash
+        ret = run_shell(shell).strip.split_nl
+        out br
+        html = []
+        ret.each do |line |
+            next if (line.start_with?("index ") || line.start_with?("+++ ") || line.start_with?("diff "))
+            # line = sBlue(line) if line.start_with?("diff ")
+            # line = sGreen(line) if line.start_with?("+++ ")
+            line = '<hr/>' + sBG(line.gsub('--- a/','')) if line.start_with?("--- ")
+            line = sRedBG(line) if line.start_with?("- ")
+            line = sGreenBG(line) if line.start_with?("+ ")
+            line = sOrange(line) if line.start_with?("@@ ")
+            html << line
+        end
+        out '<hr/><pre>' + html.join(br) + '</pre>'
+
+    end
+
+
 end
 
 
@@ -229,26 +286,33 @@ def v_list(p,db)
 
     GIT_REPOS.each do |repo |
 
-        dir = home + repo
+        dir = repo
         return unless dir_exist?(dir)
 
         html =  '<div class="flex-item" >'
         html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + URI.encode_www_form_component(dir)) + spc
 
+
         # トータルコミット数
         ret = sqlite2hash("select min(commit_date) start,count(*) commit_ct from commits where repo='" + File.basename(repo) + "'",db,false)
-        html << s150(ret[0]['commit_ct'].to_s)
-
-        # リモート
-        remotes = run_shell('git -C ' + dir + ' remote -v' ,false)
-        start = ret[0]['start']
-        html <<  spc + Time.parse(start).strftime(TIME_FMT.YYYYMM) << spc
+        puts ret
+        if ret.length > 0
+            html << s150(ret[0]['commit_ct'].to_s)
+            start_str = ret[0]['start']
+            if start_str == nil
+                start_str = 'コミットなし'
+            else
+                start_str = Time.parse(start_str).strftime(TIME_FMT.YYYYMM)
+            end
+            html <<  spc + start_str << spc
+        end
 
         # local branch
         # html <<  br + sBG('local branches ')
         branches = run_shell('git -C ' + dir + ' branch',false) #
         html << branches.strip.nl2br + spc
-        # githubのurl
+
+        remotes = run_shell('git -C ' + dir + ' remote -v' ,false)
         html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip.gsub('.git','') + br
 
 
@@ -263,31 +327,19 @@ def v_list(p,db)
         # log
         # recent_logs = recent_commits(LIST_LOG_LIMIT)
 
-        recent_logs = sqlite2hash("select author,commit_date,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash
+        recent_logs = sqlite2hash("select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash
                         from commits where repo='" + File.basename(repo) + "'
                         order by commit_date desc limit " + LIST_LOG_LIMIT.to_s,db,false)
 
         hashes = recent_logs.map do |row|
-            day = Time.parse(row['commit_date'])
-            day_str = day.strftime(TIME_FMT.YYMMDD)
-            if Time.now - day < 86400 * 1
-                day_str = sRed(day_str)
-            elsif Time.now - day < 86400 * 3
-                day_str = sOrange(day_str)
-            elsif Time.now - day > 86400 * 100
-                day_str = sSilver(day_str)
-            end
-
-            row['commit_date'] = day_str
-            row['message'] =row['message'].trim_spreadable(20)
-            row['author'] =row['author'].trim_spreadable(15)
+            row['date_'] = format_recent_date(row['date_'])
+            row['message'] =row['message'].trim(20)
+            row['author'] =row['author'].trim(15)
             row.delete('hash')
-
             row
         end
+        hashes = records_zero_silver(hashes)
         html <<  hash2html(hashes)
-
-
 
         # html <<  br + sBG("remote branches ")
         # branches = run_shell "git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:short) %(refname:short)' | head -10"
@@ -308,8 +360,19 @@ def v_list(p,db)
         out html2
     end
     out '</div>'
+end
 
-
+def format_recent_date(date_str)
+    day = Time.parse(date_str)
+    day_str = day.strftime(TIME_FMT.YYYYMMDD)
+    if Time.now.to_date == Date.parse(date_str)
+        day_str = sCrimson(day.strftime(TIME_FMT.HHIISS))
+    elsif Time.now - day < 86400 * 3
+        day_str = sOrange(day.strftime(TIME_FMT.YYYYMMDD))
+    elsif Time.now - day > 86400 * 100
+        day_str = sSilver(day.strftime(TIME_FMT.YYYYMMDD))
+    end
+    return day_str
 end
 
 def stats_author(db,repo_full_path)
@@ -357,15 +420,12 @@ def stats_repo_month(db,repo_full_path)
     hash
 end
 
-
-
-
-
 # 現在dir変更してから呼ぶ
-def recent_commits(limit = false)
+def recent_commits(repo_full_path,limit = false)
 
-    shell = "git log --oneline --pretty=format:'%an\t%ad\t%h\t%s'  --date=format:'%Y-%m-%d %H:%M:%S' "
+    shell = "git -C " + repo_full_path + " log --oneline --pretty=format:'%an\t%ad\t%h\t%s'  --date=format:'%Y-%m-%d %H:%M:%S' "
     shell += " | head -" + limit.to_s if limit
+    puts shell
     logs = run_shell(shell, false)
 
     hashes = logs.split_nl.map { |line| array2hash(line.split_tab,["author","date","hash","message"]) }
@@ -392,32 +452,34 @@ end
 
 def create_tables
 
-    " CREATE TABLE repos (
+'CREATE TABLE repos (
 	local_full_path	TEXT,
 	repo_name	TEXT,
 	remote	TEXT,
 	created_at	TEXT,
 	PRIMARY KEY(local_full_path)
     );
-
-    CREATE TABLE commits (
-        repo   TEXT,
-        hash	TEXT,
-        author TEXT,
-        message TEXT,
-        commit_date TEXT,
-        files_ct INTEGER,
-        add_line_ct INTEGER,
-        del_line_ct INTEGER,
-        last_view_date	TEXT,
-        created_at	TEXT,
-        PRIMARY KEY(repo, hash)
-    );
-
-    CREATE TABLE key_values (
+CREATE TABLE key_values (
         key	TEXT NOT NULL UNIQUE,
         value	TEXT
-    );"
+    );
+CREATE TABLE "commits" (
+	"repo"	TEXT,
+	"hash"	TEXT,
+	"author"	TEXT,
+	"message"	TEXT,
+	"commit_date"	TEXT,
+	"files_ct"	INTEGER,
+	"add_file_ct"	INTEGER,
+	"del_file_ct"	INTEGER,
+	"add_line_ct"	INTEGER,
+	"del_line_ct"	INTEGER,
+	"last_view_date"	TEXT,
+	"created_at"	TEXT,
+	PRIMARY KEY("repo","hash")
+    );
+    '
+
 
 end
 

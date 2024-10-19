@@ -233,8 +233,10 @@ TIME_FMT = OpenStruct.new
 TIME_FMT.YYYYMMDDHHIISS = '%Y-%m-%d %H:%M:%S'
 TIME_FMT.YYYYMMDD = '%Y-%m-%d'
 TIME_FMT.YYYYMM = '%Y-%m'
+TIME_FMT.MMDD = '%m-%d'
 TIME_FMT.YYMMDD = '%y-%m-%d'
 TIME_FMT.HHIISS = '%H:%M:%S'
+TIME_FMT.HHII = '%H:%M'
 
 def now_time_str(format = TIME_FMT.YYYYMMDDHHIISS)
   Time.now.strftime(format)
@@ -361,6 +363,7 @@ def sSilver(str) return sBase('color:silver;',str) end
 def sBlue(str) return sBase('color:blue;',str) end
 def sGray(str) return sBase('color:gray;',str) end
 def sRed(str) return sBase('color:red;',str) end
+def sCrimson(str) return sBase('color:crimson;',str) end
 def sPink(str) return sBase('color:deeppink;',str) end
 def sGreen(str) return sBase('color:green;',str) end
 def sOrange(str) return sBase('color:darkorange;',str) end
@@ -372,6 +375,7 @@ end
 
 def sPinkBG(str) return sBase('color:deeppink; background:#fee;',str) end
 def sRedBG(str) return sBase('color:red; background:#fee;',str) end
+def sGreenBG(str) return sBase('color:green; background:#efe;',str) end
 def sBlueBG(str) return sBase('color:blue; background:#eef;',str) end
 def sOrangeBG(str) return sBase('color:darkorange; background:#fee;',str) end
 
@@ -440,6 +444,15 @@ def zero_silver(number)
   number.to_s
 
 end
+def records_zero_silver(records)
+  records.each do |rec_hash|
+    rec_hash.each do |key,val|
+      rec_hash[key] = sSilver(val.to_s) if val.to_s == '0'
+    end
+  end
+  records
+end
+
 
 
 def menu(filename = "")
