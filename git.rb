@@ -94,16 +94,14 @@ def insert_git_log(db)
     home = `echo $HOME`.strip
     threads = []
     GIT_REPOS.each do |repo |
-        out 'repo ' + repo + br
-        puts 'repo ' + repo + br
+        out 'repo ' + File.basename(repo) + br
+        puts 'repo ' + File.basename(repo) + br
         dir = repo
         return unless dir_exist?(repo)
         threads << Thread.new do
-            out dir + now_time_str + br
-            puts now_time_str + br
-
             sql_hash_exist_cehck = "select hash from commits where repo='" + File.basename(repo) + "'"
             imported_list = sqlite2hash(sql_hash_exist_cehck, db)
+            out br
             if imported_list.length > 0
                 imported_list = imported_list.map { |row| row['hash'] }
             else
@@ -131,11 +129,13 @@ def insert_git_log(db)
 
                 #puts repo + " comm data not in sqlite"
             end
-            out repo + " batch insert commits " + br
-            puts repo + " batch insert commits "
+            out File.basename(repo) + " batch insert commits " + br
+            puts File.basename(repo) + " batch insert commits "
             start = Time.now
+            db.transaction
             db.execute_batch(sql_inserts)
-            puts repo + "insert end " + (Time.now - start).round(2).to_s
+            db.commit
+            puts repo + " insert end " + (Time.now - start).round(2).to_s
 
             shell = 'git -C ' + dir + ' log --numstat  --oneline'
             ret = run_shell(shell)
@@ -162,18 +162,20 @@ def insert_git_log(db)
             #out commit_details.inspect
             update_sql_batch = ""
             commit_details.each do |commit_hash,row|
-                update_sql_batch << "update commits set
+                update_sql_batch << " update commits set
                     files_ct =" + row[:files].to_s + ",
                     add_line_ct =" + row[:adds].to_s + " ,
                     del_line_ct =" + row[:dels].to_s +
                     " where hash='" + commit_hash + "' ;"
 
             end
-            puts repo + " batch update detail "
-            out repo + " batch update detail " + br
+            puts File.basename(repo) + " batch update detail "
+            out File.basename(repo) + " batch update detail " + br
             start = Time.now
+            db.transaction
             db.execute_batch(update_sql_batch)
-            puts repo + "insert end " + (Time.now - start).round(2).to_s
+            db.commit
+            puts repo + " batch update end " + (Time.now - start).round(2).to_s
         end
     end
     threads.each(&:join)

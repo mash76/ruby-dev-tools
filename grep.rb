@@ -10,7 +10,6 @@ end
 def main
     p =  $params
 
-
     out html_header("grep")
     out '<script>' + File.read("_form_events.js") + '</script>'
     out menu(__FILE__)
@@ -53,7 +52,8 @@ def main
     out 'filter ' + i_text("filter",filter,30) + br
 
     out 'exclude ' + i_text("exclude",exclude,30) + br
-    out 'recent ' + i_text("recent",recent) + br
+    out 'recent ' + i_text("recent",recent) + spc
+    [1,3,5,10,20].each { |day| out a_tag(day.to_s, "javascript:setVal('recent','" + day.to_s + "')") }
     out i_submit_trans "検索"
     out "</form><hr/>"
 
@@ -74,14 +74,15 @@ def main
     pattern = Regexp.new("(" + Regexp.escape(filter) + ")",Regexp::IGNORECASE)
     ct = 1
     files2.each do |line|
-        out ct.to_s + spc + line.gsub(path,"").gsub(pattern,sRed('\1')) + br
+        mtime = File.stat(line).mtime.strftime(TIME_FMT.YYYYMMDDHHIISS)
+        out ct.to_s + spc + line.gsub(path,"").gsub(pattern,sRed('\1')) + spc +  sSilver(mtime) + br
         ct += 1
     end
 end
 
 def ext_stat( path, filter, exclude )
 
-    out sBlue('extention stat') + br
+    out sBlue('ext ')
 
     shell = 'find "' + path + '" -type f '
     excludes = exclude.split(/\s+/)
