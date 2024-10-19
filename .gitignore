@@ -4,3 +4,5 @@ cache/*
 docker/*
 _info.rb
 Gemfile.lock
+vendor/bundle
+.bundle/config

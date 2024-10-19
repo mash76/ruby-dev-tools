@@ -9,14 +9,6 @@
     if (is_submit == "submit" ) $('#f1').submit()
   }
 
-  // 動画管理でのファイルカウント
-	function movieOpenAndCountUp(inode){
-    console.log(inode)
-		let url = '?movie_open_inode=' + inode
-    console.log(url)
-		$.get(url).done( (data) => { console.log(data) } )
-	}
-
 	// ファイルをopen
 	function openFile(path){
     console.log(path)
@@ -51,11 +43,11 @@
         $(e).css("background","#eef").css("border","2px solid #88f")
       }
     })
-
   }
 
-  $(document).ready(() => {
+  function eventCommonInputs(){
 
+    // inputタグ系イベント整え
     $("table.t_hover tr")
     .mouseover( (e) => {
       $(e.target).closest('tr').css('background','#f9f9ff')
@@ -64,13 +56,13 @@
       $(e.target).closest('tr').css('background','')
     })
 
-	  // ダブルクリックで値クリア
+	  // textダブルクリックで値クリア
     $("form input").dblclick( (e) => {
         $(e.target).val("")
         $('#f1').submit()
     })
 
-    // エスケープ
+    // ESCで全フォームクリア
     $("form input").keyup( (e) => { colorUsedTextBox() })
 	  // escape でinputを全部クリア
     $(document).keydown( (e) => {
@@ -80,7 +72,31 @@
       }
     })
 
+
+  }
+
+  // debug_logのdivをダブルクリックで消す
+  function eventCommonDebugs(){
+
+    $('div#debug_log').dblclick(()=>{
+      $('div#debug_log').hide()
+    })
+  }
+
+
+  $(document).ready(() => {
+    eventCommonInputs()
+    eventCommonDebugs()
     $('#filter').focus() // 初期フォーカス
     colorUsedTextBox() // 埋まったboxを青に
-
   })
+
+  // 個別画面
+
+  // 動画管理  ファイルカウント
+	function movieOpenAndCountUp(inode){
+    console.log(inode)
+		let url = '?movie_open_inode=' + inode
+    console.log(url)
+		$.get(url).done( (data) => { console.log(data) } )
+	}

@@ -11,14 +11,6 @@ def main
 	table = p[:table].to_s
 	view = p[:view] || "db_list"
 
-	# ナビ
-	# ["import","list","db"].each do | view_name |
-	# 	disp = view_name
-	# 	disp = sRed(disp) if disp == view
-	# 	out a_tag disp + spc,"/dev/sqlite?view=" + view_name
-	# end
-	# out br
-
     # ファイル一覧
     if view == "db_list"
         v_db_list()
@@ -34,10 +26,10 @@ def main
     update(p,db) if p[:upd]
 
     # テーブル一覧
-    v_db_detail(p,db,sqlite_path) if view == "db"
+    v_db_detail(p ,db ,sqlite_path ) if view == "db"
     # テーブル指定
-    v_table(p,db,sqlite_path,table) if view == "table"
-    v_row_edit(p,db,sqlite_path) if view == "row_edit"
+    v_table(p ,db ,sqlite_path ,table ) if view == "table"
+    v_row_edit(p ,db ,sqlite_path ) if view == "row_edit"
 end
 
 def update(p,db)

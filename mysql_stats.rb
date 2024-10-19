@@ -27,45 +27,51 @@ conns.each do |conn_name,conn|
 
     out '<table><tr><td valign=top style="border:none;" >'
 
-    out sBG("info") + spc
-    schema_info = sql2hash(" SELECT
-        DEFAULT_CHARACTER_SET_NAME DEF_CHARSET,
-        DEFAULT_COLLATION_NAME DEF_COLLATION,
-        SQL_PATH, DEFAULT_ENCRYPTION ENCRYPT_
-        FROM information_schema.SCHEMATA
-        WHERE SCHEMA_NAME = '" + conn_name + "' ",conn_name,20)
-    out hash2html(schema_info)
-
-    schema_info = sql2hash(" SELECT * FROM information_schema.SCHEMATA
-    WHERE SCHEMA_NAME = '" + conn_name + "'  ",conn_name,20)
-    out hash2html(schema_info)
-
-    out br + sBG("table view index fk ") + spc
+    #out sBG("table view index fk ") + spc
     recs = sql2hash("
         SELECT
+        (SELECT count(*) ct FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" + conn_name + "' and TABLE_TYPE= 'BASE TABLE' ) tables,
+        (SELECT count(*) ct FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" + conn_name + "' and TABLE_TYPE= 'VIEW' ) views,
         (SELECT count(*) ct FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" + conn_name + "' ) tables,
         (SELECT count(*) ct FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '" + conn_name + "' ) columns,
         (SELECT count(*) ct FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = '" + conn_name + "' ) indexes,
         (SELECT count(*) ct FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '" + conn_name + "'
         AND REFERENCED_TABLE_NAME IS NOT NULL ) fk
-        ",conn_name)
+        ",conn_name,15)
     out hash2html(recs)
 
     # 横一列
     out '</td><td valign=top style="border:none;">'
 
-    out sBG("data/index") + spc
+    #out sBG("data/index") + spc
     sizes = sql2hash("SELECT
     SUM(DATA_LENGTH) DATA_SUM,
     SUM(INDEX_LENGTH) INDEX_SUM
     FROM information_schema.TABLES
     WHERE TABLE_SCHEMA = '" + conn_name + "'
-    ",conn_name,20)
+    ",conn_name,15)
     sizes.each do |row|
         row['DATA_SUM'] = (row['DATA_SUM'].to_f / 1024.0 / 1024.0 ).round(1).to_s + sSilver("mb")
         row['INDEX_SUM'] = (row['INDEX_SUM'].to_f / 1024.0 / 1024.0 ).round(1).to_s + sSilver("mb")
     end
     out hash2html(sizes)
+
+    out '</td><td valign=top style="border:none;">'
+
+    #out sBG("info") + spc
+    schema_info = sql2hash(" SELECT
+        DEFAULT_CHARACTER_SET_NAME DEF_CHARSET,
+        DEFAULT_COLLATION_NAME DEF_COLLATION,
+        SQL_PATH, DEFAULT_ENCRYPTION ENCRYPT_
+        FROM information_schema.SCHEMATA
+        WHERE SCHEMA_NAME = '" + conn_name + "' ",conn_name,15)
+    out hash2html(schema_info)
+
+    # schema_info = sql2hash(" SELECT * FROM information_schema.SCHEMATA
+    # WHERE SCHEMA_NAME = '" + conn_name + "'  ",conn_name,20)
+    # out hash2html(schema_info)
+
+
 
     out '</td></tr></table>'
 
@@ -76,7 +82,7 @@ conns.each do |conn_name,conn|
     data_types = sql2hash("SELECT DATA_TYPE,count(*) ct
         FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA = '" + conn_name + "' GROUP BY DATA_TYPE ORDER BY ct DESC;
-        ",conn_name,20)
+        ",conn_name,10)
     data_types.each do |row|
         row["DATA_TYPE"] = a_tag(row["DATA_TYPE"],"/dev/mysql?filter=" + row["DATA_TYPE"])
     end

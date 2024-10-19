@@ -602,8 +602,6 @@ def view_list(p,db)
 		out '</td></tr></table>'
 end
 
-main
-
 def create_table
 	"
 	CREATE TABLE books (
@@ -631,6 +629,11 @@ def create_table
 		updated TEXT
 	)"
 end
+
+
+main
+
+
 
 =begin
 

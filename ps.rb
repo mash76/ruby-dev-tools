@@ -1,6 +1,6 @@
 
 def main
-    p = params = $params
+    p = $params
 
     out html_header("ps")
     out menu(__FILE__)

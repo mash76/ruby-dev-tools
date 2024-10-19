@@ -1,4 +1,4 @@
-p = params = $params
+p = $params
 conns = $mysql_conns
 
 out html_header("mysql")

@@ -5,11 +5,8 @@ CATE2_DEFAULT_ID = 36
 CATE1_DEFAULT_NAME = "default"
 CATE2_DEFAULT_NAME = "default"
 
-
 # ?ajax=runapp&path=System+Settings   アプリを開く
 # ?ajax=open&path=Desktop    ファイルやフォルダを開く
-
-
 
 def main
 
@@ -28,7 +25,6 @@ def main
     insert_link(p,db,p[:name],p[:href],p[:shortcut]) if upd == 'add_link'
 
     # ----------------------------------------
-
 
     edit = p[:edit] || 'off'
     view = p[:view] || 'links'
@@ -49,8 +45,9 @@ def main
 
     out '</td></tr></table>'
 
+    v_commit(p,db,repo,commit_hash) if view == 'commit'
     v_folders(p,db) if view == 'folders'
-    v_apps() if view == 'apps'
+    v_apps(db) if view == 'apps'
     v_new(p,db) if view == 'new'
     v_links(p,db,edit) if view == 'links'
     v_manage(p,db) if view == 'manage'
@@ -62,17 +59,45 @@ def v_folders(p,db)
 
 end
 
-def v_apps()
+def v_apps(db)
 
-    shell = 'find /Applications /System/Applications /Users/$(whoami)/Applications -name "*.app" -maxdepth 2'
+    # すでに適用されたapp
+    used_apps = sqlite2hash("select href from links where href like '%ajax=runapp%'
+                            order by href asc",db)
+    decorded_links = used_apps.map { |row| URI.decode_www_form_component( row['href']) }
+        out br
+    shell = 'find /Applications /System/Applications ~/Applications -name "*.app" -maxdepth 2'
     apps = run_shell(shell).split_nl
     out br
-    apps.each do |line|
-        app_folder_name = File.basename(line)
-        name = app_folder_name.gsub('.app','')
-        sc = name.gsub(/\s+/,'')
-       out line.gsub(app_folder_name,sBlue(app_folder_name))  + a_tag(' add','?upd=add_link&name=' + name + '&href=' + URI.encode_www_form_component('?ajax=runapp&path=' + name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
+
+    hashes = []
+    apps.each do |app_full_path|
+        app_name = File.basename(app_full_path)
+        app_name = app_name.gsub('.app','')
+        sc = app_name.gsub(/\s+/,'')
+        is_used = false
+        decorded_links.each do |db_link_path|
+            is_used = true if db_link_path.include?(app_name)
+        end
+        show_path =  app_full_path.gsub(app_name,sBlue(app_name))
+
+        action = ""
+        if is_used
+            action += sSilver("used")
+        else
+            action += a_tag(' add','?upd=add_link&name=' + app_name + '&href=' + URI.encode_www_form_component('?ajax=runapp&path=' + app_name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
+        end
+
+        hashes << { 'action' => action , 'name' => app_name, 'full_path' => sSilver(app_full_path)}
     end
+    out hash2html(hashes)
+
+end
+
+def v_commit(p,db,repo,commit_hash)
+
+    out repo + "の" + commit_hash
+
 
 end
 
@@ -82,8 +107,6 @@ def v_new(p,db)
     name = p[:name].to_s
     href = p[:href].to_s
     shortcut = p[:shortcut].to_s
-
-
 
     # form
     out '<form id="f1" >'
@@ -102,24 +125,24 @@ end
 def v_manage(p,db)
     out sBlue('リンク生成') + br
 
-    csv = p[:csv].to_s
+    # csv = p[:csv].to_s
     filter = p[:filter].to_s
     order_by = p[:order_by].to_s
     order_dir = p[:order_dir].to_s
 
     # csvで登録 name href shortcut
-    if csv.length > 0
-        out sRed('csv') + br
-        rows = csv.split_nl
-        out rows.length.to_s + br
-        rows.each do |row|
-            cols = row.split(',')
-            date =  now_time_str
-            sqlite2hash("insert into links
-                    (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at)
-                    values('none','none','" + cols[0] + "' , '" + cols[1] + "' , '" + cols[2] + "',0, '" + date + "', '" + date + "') ",db)
-        end
-    end
+    # if csv.length > 0
+    #     out sRed('csv') + br
+    #     rows = csv.split_nl
+    #     out rows.length.to_s + br
+    #     rows.each do |row|
+    #         cols = row.split(',')
+    #         date =  now_time_str
+    #         sqlite2hash("insert into links
+    #                 (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at)
+    #                 values('none','none','" + cols[0] + "' , '" + cols[1] + "' , '" + cols[2] + "',0, '" + date + "', '" + date + "') ",db)
+    #     end
+    # end
 
     # 削除
     del = p[:del].to_s
@@ -264,7 +287,7 @@ def v_links(p,db,edit)
                     out sBold(' <a id="cate_add_a_' + cate1_id.to_s + '" href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style="  color:#eee;">+</a>')
 
 
-                    out sBold(' <a id="cate1_edit_' + cate1_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate1&pk=' + cate1_id.to_s + '&view=row_edit" style="  color:#eee;">e</a>')
+                    out sBold(' <a id="cate1_edit_' + cate1_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate1&pk=' + cate1_id.to_s + '&view=row_edit" style=" color:#eee;">e</a>')
                     out '</div>'
 
                 else
@@ -304,11 +327,7 @@ def v_links(p,db,edit)
                             sc="' + row['shortcut'] + '"
                             href="' + row['href'] + '">' + link_name + '</a>'
 
-                    # editモードの場合
-                    if edit == 'on'
-                        out sSilver(row['shortcut']) ##
-                        out a_tag(sPink("Edit"),"/dev/sqlite?sqlite_path=" + URI.encode_www_form_component(SQLITE_PATH) + "&table=links&pk=" + row['id'].to_s + "&view=row_edit")
-                    end
+                        out a_tag( sBold(sBase('color:#eee;','e')),"/dev/sqlite?sqlite_path=" + URI.encode_www_form_component(SQLITE_PATH) + "&table=links&pk=" + row['id'].to_s + "&view=row_edit")
                     out spc
                 end
             else
@@ -340,7 +359,11 @@ def insert_link(p,db,name,href,shortcut)
             out br
             out sRed("exist ") + hash2html(kizon) + br if kizon.length > 0
 
-            sqlite2hash("insert into links (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at) values(" + CATE1_DEFAULT_ID.to_s + "," + CATE2_DEFAULT_ID.to_s + ",'" + name + "' , '" + href + "' , '" + shortcut + "',0, '" + now_time_str + "', '" + now_time_str + "') ",db)
+            sqlite2hash("insert into links
+                    (cate1,cate2,name,href,shortcut,use_count,last_use_date,created_at)
+                    values(" + CATE1_DEFAULT_ID.to_s + "," + CATE2_DEFAULT_ID.to_s + ",'" + name + "' ,
+                    '" + href + "' , '" + shortcut + "', 0 ,
+                    '" + now_time_str + "', '" + now_time_str + "') ",db)
 
             puts 'true'
         end

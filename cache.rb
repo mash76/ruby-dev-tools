@@ -1,4 +1,4 @@
-p = params = $params
+p = $params
 
 out html_header("cache")
 out menu(__FILE__)

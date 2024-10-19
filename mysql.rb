@@ -1,4 +1,4 @@
-p = params = $params
+p = $params
 conns = $mysql_conns
 
 out html_header("mysql")
@@ -6,14 +6,24 @@ out '<script>' + File.read("_form_events.js") + '</script>'
 out menu(__FILE__)
 # ----------------------------------------
 filter = p[:filter].to_s
+schemas = p['schemas'] || 'all'
 
 out '<form method="get" >'
+out i_hidden("schemas",schemas)
 out i_text("filter",filter,20)
 out i_submit_trans "検索"
 out '</form>'
 
+
 out conns.length.to_s + sSilver(" schemas ")
-out conns.keys.join(' ')
+conns.keys.each do |conn_name|
+  out a_tag(conn_name, '?schemas=' + conn_name) + spc
+end
+
+out spc + 'all' + br
+
+conns = { schemas => $mysql_conns[schemas] }  if schemas != 'all'
+
 
 conns.each do |conn_name,conn|
 

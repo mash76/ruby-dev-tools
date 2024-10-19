@@ -1,9 +1,12 @@
+# 標準モジュール
 require 'net/http'
 require 'json'
-require 'sqlite3'
 require 'uri'
 require 'erb'
-require 'shellwords'
+
+require 'sqlite3'
+require 'shellwords' # shell向けのエンコード
+require 'ostruct'  #動的なオブジェクト
 
 NO_DISP = false
 
@@ -56,7 +59,7 @@ class String
     return str
   end
 
-  def split_nl() return self.split(/\n/) end
+  def split_nl() return self.split(/\r\n|\r|\n/) end # \r か \n か \r\n で分割
   def split_tab() return self.split(/\t/) end
 end
 
@@ -93,7 +96,7 @@ module SQL3
     puts "\x1b[33m" + 'sql3 conn ' + "\x1b[0m" + path
     if File.exist?(path)
       db = SQLite3::Database.new(path)
-      out sGreen("SQLite3接続 ") + sSilver(path)
+    #  out sGreen("SQLite3接続 ") + sSilver(path)
     else
       db = SQLite3::Database.new(path)
       out sOrange("SQLite3作成 ") + sSilver(path)
