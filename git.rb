@@ -9,8 +9,45 @@ GIT_SHOW_SHELL = false # シェルコマンド見せるか のスイッチ
 IMPORT_SIZE = false # 全件はfalse テスト用 impot
 SQLITE_PATH_GIT = 'files/git.sql3'
 
+
+
+def preview_form
+
+    '<div id="diff_preview" style="
+                font-size:70%;
+                position:fixed; top:20px;left:900px; width:600px; height:800px;
+                padding: 15px; background:#fff; border-radius:10px;
+                opacity: 0.9;
+                vertical-align:top;
+    ">aaa</div>
+    <script>
+            $(document).on("mouseover", "a", function(event) {
+                event.preventDefault();
+                hash =  $(event.target).attr("hash")
+                repo =  $(event.target).attr("repo")
+                url = "?ajax=diff&repo=" + repo + "&hash=" + hash
+                $.get(url,(data)=> {
+                    console.log(data)
+                    $("#diff_preview").html(data)
+                })
+            })
+            $(document).on("click", "div#diff_preview", function(event) {
+                    $("#diff_preview").hide()
+                })
+    </script> '
+
+end
+
 def ajax_git(p)
 
+    ajax = p[:ajax] || ''
+    repo = p[:repo] || ''
+    hash = p[:hash] || ''
+    if ajax == 'diff'
+        ret = diff(repo,hash).join(br)
+        out ret
+        return true
+    end
 
 
 
@@ -22,7 +59,8 @@ def main
     p = $params
 
     ajax_common(p)
-    ajax_git(p) # diffプレビュー
+    ret = ajax_git(p) # diffプレビュー
+    return if ret
 
     out html_header("git")
     out '<script>' + File.read("_form_events.js") + '</script>'
@@ -71,6 +109,8 @@ def v_list(p,db)
     out i_submit_trans
     out '</form>'
 
+    out preview_form
+
     out '<div class="flex-container" >'
     htmls = {}
     repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
@@ -81,7 +121,6 @@ def v_list(p,db)
 
         html =  '<div class="flex-item" >'
         html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + ENC.url(dir)) + spc
-
 
         # トータルコミット数
         ret = sqlite2hash("select min(commit_date) start,count(*) commit_ct from commits where repo='" + File.basename(repo) + "'",db,false)
@@ -115,8 +154,11 @@ def v_list(p,db)
 
         # log
         sql = "select author,commit_date date_,
-                files_ct fi ,add_file_ct f_add,del_file_ct f_del, add_line_ct ad ,del_line_ct dl,message,hash
-                        from commits where repo='" + File.basename(repo) + "'"
+                files_ct fi ,
+                add_file_ct f_add,del_file_ct f_del,
+                add_line_ct ad ,del_line_ct dl,
+                message,hash
+                from commits where repo='" + File.basename(repo) + "'"
         sql += " and files_ct > 0 " if ex_merge.length > 0
         sql += " order by commit_date desc limit " + LIST_LOG_LIMIT.to_s
 
@@ -134,8 +176,10 @@ def v_list(p,db)
 
         hashes = recent_logs.map do |row|
             row['date_'] = format_recent_date(row['date_'])
-            row['message'] =row['message'].trim(20)
-            row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+            row['message'] = row['message'].trim(20)
+            #row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+            row['message']= '<a repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
+
 
             row['author'] =row['author'].trim(15)
             row.delete('hash')
@@ -166,6 +210,8 @@ def v_list(p,db)
 end
 
 def v_repo(p,db)
+
+    out preview_form
 
     repo = p[:repo]
     view2 = p[:view2] || 'commits'
@@ -235,7 +281,10 @@ def v_repo(p,db)
                 row['date_'] = format_recent_date(row['date_'])
 
                 row['message'] =color_val(row['message'],filter) if filter.length > 0
-                row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+                #row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+                row['message']= '<a repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
+
+
                 row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に
 
                 row['author'] = color_val(row['author'],filter) if filter.length > 0
@@ -473,9 +522,8 @@ end
 def diff(repo,commit_hash)
 
     shell = 'git -C ' + repo  + ' show ' + commit_hash
-    ret = run_shell(shell).strip.split_nl
-    out br
-    html = []
+    ret = run_shell(shell, false).strip.split_nl
+    html_ary = []
     ret.each do | line |
         next if (line.start_with?("index ") || line.start_with?("+++ ") || line.start_with?("diff "))
         line = ENC.html(line)
@@ -485,9 +533,9 @@ def diff(repo,commit_hash)
         line = sRedBG(line) if line.start_with?("-")
         line = sGreenBG(line) if line.start_with?("+")
         line = sOrange(line) if line.start_with?("@@ ")
-        html << line
+        html_ary << line
     end
-    html
+    html_ary
 end
 
 
