@@ -84,7 +84,7 @@ def v_apps(db)
         if is_used
             action += sSilver("used")
         else
-            action += a_tag(' add','?upd=add_link&name=' + app_name + '&href=' + URI.encode_www_form_component('?ajax=runapp&path=' + app_name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
+            action += a_tag(' add','?upd=add_link&name=' + app_name + '&href=' + ENC.url('?ajax=runapp&path=' + app_name.gsub(' ' , '+')) + '&shortcut=' + sc.downcase.slice(0, 12)) + br
         end
 
         hashes << { 'action' => action , 'name' => app_name, 'full_path' => sSilver(app_full_path)}
@@ -210,7 +210,7 @@ def v_manage(p,db)
         #out sc + sSilver(" dup_len ") + max_dup_len.to_s + br
 
         row['act'] = a_tag('del','?view=manage&del=' + row['id'].to_s)
-        row['act'] += spc + a_tag('upd','sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=links&pk=' + row['id'].to_s + '&view=row_edit')
+        row['act'] += spc + a_tag('upd','sqlite?sqlite_path=' + ENC.url(SQLITE_PATH) + '&table=links&pk=' + row['id'].to_s + '&view=row_edit')
         row['name'] ='<a target="_blank" draggable="true" sc="' + row['shortcut'] + '" href="' + row['href'] + '">' + row['name'] + '</a> '
         row['href'] = row['href'].trim_spreadable(50)
 
@@ -284,7 +284,7 @@ def v_links(p,db,edit)
                     out sBold(' <a id="cate_add_a_' + cate1_id.to_s + '" href="javascript:showAddCate2Form(\'' + cate1_id.to_s + '\')" style="  color:#eee;">+</a>')
 
 
-                    out sBold(' <a id="cate1_edit_' + cate1_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate1&pk=' + cate1_id.to_s + '&view=row_edit" style=" color:#eee;">e</a>')
+                    out sBold(' <a id="cate1_edit_' + cate1_id.to_s + '" href="/dev/sqlite?sqlite_path=' + ENC.url(SQLITE_PATH) + '&table=cate1&pk=' + cate1_id.to_s + '&view=row_edit" style=" color:#eee;">e</a>')
                     out '</div>'
 
                 else
@@ -297,7 +297,7 @@ def v_links(p,db,edit)
             # cate2
             out spc + spc + spc + cate2_row['name'] + spc
 
-            out sBold('<a id="cate2_edit_' + cate2_id.to_s + '" href="/dev/sqlite?sqlite_path=' + URI.encode_www_form_component(SQLITE_PATH) + '&table=cate2&pk=' + cate2_id.to_s + '&view=row_edit" style="  color:#eee;">e</a>')
+            out sBold('<a id="cate2_edit_' + cate2_id.to_s + '" href="/dev/sqlite?sqlite_path=' + ENC.url(SQLITE_PATH) + '&table=cate2&pk=' + cate2_id.to_s + '&view=row_edit" style="  color:#eee;">e</a>')
 
             out '</td><td style="' + style + ' width:1200px;">'
 
@@ -324,7 +324,7 @@ def v_links(p,db,edit)
                             sc="' + row['shortcut'] + '"
                             href="' + row['href'] + '">' + link_name + '</a>'
 
-                        out a_tag( sBold(sBase('color:#eee;','e')),"/dev/sqlite?sqlite_path=" + URI.encode_www_form_component(SQLITE_PATH) + "&table=links&pk=" + row['id'].to_s + "&view=row_edit")
+                        out a_tag( sBold(sBase('color:#eee;','e')),"/dev/sqlite?sqlite_path=" + ENC.url(SQLITE_PATH) + "&table=links&pk=" + row['id'].to_s + "&view=row_edit")
                     out spc
                 end
             else

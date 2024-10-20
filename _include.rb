@@ -10,6 +10,12 @@ require 'ostruct'  #動的なオブジェクト
 
 NO_DISP = false
 
+class Array
+  def pluck(key)
+    self.map { |item| item[key] if item.is_a?(Hash) }
+  end
+end
+
 def ffprobe_streams(path)
 	  path_esc = path.gsub('"','\"')
     shell1 = 'ffprobe -v error -print_format json -show_streams "' + path_esc  + '"'
@@ -94,6 +100,14 @@ def truncate_by_width(str, max_width)
   out_str
 end
 
+module ENC
+  def self.url(path)
+    return URI.encode_www_form_component(path)
+  end
+end
+
+
+
 
 module SQL3
   def self.connect_or_create(path, create_sql)
@@ -113,7 +127,7 @@ module SQL3
   end
 
   def self.info(path)
-    ret =  sOrange('sqlite3 ') + a_tag(sSilver(path),"/dev/sqlite?sqlite_path=" +  URI.encode_www_form_component(path) + '&view=db') + spc
+    ret =  sOrange('sqlite3 ') + a_tag(sSilver(path),"/dev/sqlite?sqlite_path=" +  ENC.url(path) + '&view=db') + spc
     stat = File.stat(path)
     db = SQLite3::Database.new path
     tables = sqlite2hash("SELECT * FROM sqlite_master WHERE type='table' ",db,false)
@@ -127,7 +141,7 @@ def SQL3.info_hash(path)
 
   #### ファイルなければエラー
   ret = {}
-  ret['file_path'] =  a_tag(path,'/dev/sqlite?sqlite_path=' +  URI.encode_www_form_component(path) + "&view=db")
+  ret['file_path'] =  a_tag(path,'/dev/sqlite?sqlite_path=' +  ENC.url(path) + "&view=db")
   stat = File.stat(path)
   db = SQLite3::Database.new path
   tables = sqlite2hash("SELECT * FROM sqlite_master WHERE type='table' ",db,false)
@@ -177,7 +191,7 @@ def sql2hash(sql, conn_name, trim_len = 50) # mysql
       puts "\x1b[35m" + 'mysql ' + "\x1b[0m" + sql
       out sSilver(sql.trim_spreadable(trim_len)) + spc if trim_len != NO_DISP
       results = $mysql_conns[conn_name].query(sql).to_a
-      out results.length.to_s + spc + a_tag(sSilver("Edit"),"/dev/sql?conn_name=" + conn_name + "&sql_text=" + URI.encode_www_form_component(sql) ) if trim_len != NO_DISP
+      out results.length.to_s + spc + a_tag(sSilver("Edit"),"/dev/sql?conn_name=" + conn_name + "&sql_text=" + ENC.url(sql) ) if trim_len != NO_DISP
       return results
   rescue Mysql2::Error => e
       out br + sRed(e.message) + br

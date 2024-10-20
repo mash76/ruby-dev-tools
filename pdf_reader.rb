@@ -61,13 +61,13 @@ def main()
 
 
     recents.each do |row|
-        out a_tag(File.basename(row['file_name'].to_s), "?view=show&path=" + URI.encode_www_form_component(row['file_name'].to_s )) + spc + row['updated_at'].to_s + br
+        out a_tag(File.basename(row['file_name'].to_s), "?view=show&path=" + ENC.url(row['file_name'].to_s )) + spc + row['updated_at'].to_s + br
     end
     out '</div></div>'
 
 
     ['list'].each do | v |
-        out a_tag(same_red(v,view),'?view=' + v + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
+        out a_tag(same_red(v,view),'?view=' + v + '&path=' + ENC.url(pdf_path)) + spc
     end
     out br
 
@@ -76,12 +76,12 @@ def main()
         return
     end
 
-    out File.basename(pdf_path) + spc + a_tag('finder',"javascript:setFinderSelect('" + URI.encode_www_form_component(pdf_path) + "')")
+    out File.basename(pdf_path) + spc + a_tag('finder',"javascript:setFinderSelect('" + ENC.url(pdf_path) + "')")
 
     out (spc * 4)
     stat = File.stat(pdf_path)
     jpg_path = PDF_OUTPUT_PATH + '/' + stat.ino.to_s
-    out jpg_path + spc + a_tag('finder',"javascript:setFinderSelect('" + URI.encode_www_form_component(jpg_path) + "')") + (spc * 4)
+    out jpg_path + spc + a_tag('finder',"javascript:setFinderSelect('" + ENC.url(jpg_path) + "')") + (spc * 4)
 
     pdf_size = stat.size
     pdf_size_str = (pdf_size / 1024.0 / 1024.0).round(2).to_s + sSilver('mb')
@@ -104,7 +104,7 @@ def main()
 
 
     ['convert','show','del'].each do | v |
-        out a_tag(same_red(v,view),'?view=' + v + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
+        out a_tag(same_red(v,view),'?view=' + v + '&path=' + ENC.url(pdf_path)) + spc
     end
     out br
 
@@ -137,7 +137,7 @@ def v_list(p)
     out br
     pdf_ary.each do |fpath|
         out fpath.sub(PDF_DIR,'').gsub(filter,sRed(filter)) + spc
-        out a_tag(sSilver('show') , '/dev/pdf_reader?view=show&path=' + URI.encode_www_form_component(fpath)) + spc
+        out a_tag(sSilver('show') , '/dev/pdf_reader?view=show&path=' + ENC.url(fpath)) + spc
 
         # すでにdirがあれば
         puts 'line -- ' + fpath

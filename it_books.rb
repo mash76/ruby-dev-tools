@@ -466,7 +466,7 @@ def view_stat(p,db)
 	word_group = p[:word_group].to_s
 	# カテゴライズキーワード一覧
 	word_groups.each do |key,words|
-		out a_tag(sBlack(key) + sSilver(words.length.to_s) + spc,"?view=stat&word_group=" +  URI.encode_www_form_component(key))
+		out a_tag(sBlack(key) + sSilver(words.length.to_s) + spc,"?view=stat&word_group=" +  ENC.url(key))
 	end
 
 	return if word_group.length == 0

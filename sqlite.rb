@@ -89,7 +89,7 @@ def v_db_detail(p,db,sqlite_path)
         col_infos = table_cols_info(db,row['name'] )
         row['cols'] = col_infos.length
         row['rows'] = row_ct[0]['ct']
-        row['name'] = '<a href="?sqlite_path=' + URI.encode_www_form_component(sqlite_path) + '&table=' + row['name'].to_s + '&view=table">' + row['name'] + '</a> '
+        row['name'] = '<a href="?sqlite_path=' + ENC.url(sqlite_path) + '&table=' + row['name'].to_s + '&view=table">' + row['name'] + '</a> '
         row['sql'] = row['sql'].trim_spreadable(30)
     end
     out hash2html(tables)

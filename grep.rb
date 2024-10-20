@@ -19,7 +19,7 @@ def main
     path = p[:path] || GREP_PATHS[0]['path']
     path_id = 0
     GREP_PATHS.each_with_index do | hash,index |
-        out a_tag(File.basename(hash['path']) , "?path=" + URI.encode_www_form_component(hash['path'])) + spc
+        out a_tag(File.basename(hash['path']) , "?path=" + ENC.url(hash['path'])) + spc
         path_id = index if hash['path'] == path
     end
     out br

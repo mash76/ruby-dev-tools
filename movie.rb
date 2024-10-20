@@ -152,12 +152,12 @@ def main()
         exist_str = ""
         exist_str = sRed("no-file ") unless File.exist?(full_path)
         row['view'] = zero_silver(row['view'])
-        row['sel'] = a_tag(sSilver("sel"),"javascript:setFinderSelect('" + URI.encode_www_form_component(full_path) + "')")
-        row['sand'] = a_tag(sSilver("sand"),"ffprobe.php?filepath=" + URI.encode_www_form_component(full_path))
+        row['sel'] = a_tag(sSilver("sel"),"javascript:setFinderSelect('" + ENC.url(full_path) + "')")
+        row['sand'] = a_tag(sSilver("sand"),"ffprobe.php?filepath=" + ENC.url(full_path))
         row['filepath'] = a_tag(path_disp, "javascript:movieOpenAndCountUp('" + row['inode'].to_s + "')" )
         row['is_local'] = sSilver(row['is_local']) if row['is_local'] == "local"
         # handbrake実験
-        row['brake'] = a_tag(sSilver("brake"),"javascript:openWithHandbrake('"  +  URI.encode_www_form_component(full_path)  +  "')")
+        row['brake'] = a_tag(sSilver("brake"),"javascript:openWithHandbrake('"  +  ENC.url(full_path)  +  "')")
         unless File.exist?(full_path)
             row['filepath'] = sRevRed('no file') + ' ' + row['filepath']
             no_file_ct += 1
@@ -600,14 +600,14 @@ def check_local_and_insert(rows,db)
                         local_state = 'local'
                     end
                     sqlite2hash("update movies set is_local='" + local_state + "',	is_local_checked='" + strat_str + "' where inode=" + row["inode"].to_s,db)
-                    out a_tag(sSilver(" sel "),"javascript:setFinderSelect('"  +  URI.encode_www_form_component(full_path)  +  "')")
+                    out a_tag(sSilver(" sel "),"javascript:setFinderSelect('"  +  ENC.url(full_path)  +  "')")
                     out output.trim_spreadable(30)
                     out br
                 end
             rescue Timeout::Error
                 ct[:timeout].increment
                 out br + ct[:all].value.to_s + sRed('timeout') + spc + row["filepath"]
-                out a_tag(sSilver(" sel "),"javascript:setFinderSelect('"  +  URI.encode_www_form_component(full_path)  +  "')")
+                out a_tag(sSilver(" sel "),"javascript:setFinderSelect('"  +  ENC.url(full_path)  +  "')")
 
             end
            # out br
@@ -715,7 +715,7 @@ def filterList2HTML(words,stat)
                  vals.each do |val|
                     ct = ""
                     ct = stat[val.to_s].to_s
-                    ret << a_tag(val.to_s,"?filter=" + URI.encode_www_form_component(val.to_s)) + ct + spc
+                    ret << a_tag(val.to_s,"?filter=" + ENC.url(val.to_s)) + ct + spc
                  end
             end
         end

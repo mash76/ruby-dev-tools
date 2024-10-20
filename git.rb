@@ -34,6 +34,16 @@ def main
 
     view = p[:view] || 'list'
 
+    upd = p[:upd].to_s
+    if upd == 'add_repo'
+        dir_name = File.basename(p[:path])
+        out sRed('add repo ') + p[:path] + br
+        sql_insert = "insert into repos (local_full_path,repo_name,created_at)
+            values ('" + p[:path] + "','" + dir_name + "','" + now_time_str + "') "
+        sqlite2hash(sql_insert,db)
+        out br
+    end
+
     insert_git_log(db) if view == 'import'
 
     menus = ["list","import","db_stat","search_repo",'pull']
@@ -43,25 +53,44 @@ def main
     out br
 
     v_pull(db) if view == 'pull'
-    v_search_repo(db) if view == 'search_repo'
+    v_search_repo(p,db) if view == 'search_repo'
     v_db_stat(db) if view == 'db_stat'
     v_repo(p,db) if view == 'repo'
     v_list(p,db) if view == "list"
 end
 
-def v_search_repo(db)
+def v_search_repo(p,db)
 
-        shell ='find ~  -maxdepth 7 -type d -name ".git"  2>/dev/null'
-        ret = run_shell(shell )
+    depth = p[:depth] || "3"
+
+    out 'search root ' + File.expand_path('~') + br
+    out 'search depth '
+    ["3","5","7"].each do |d|
+        out a_tag(same_red(d,depth), '?view=search_repo&depth=' + d)
+    end
+    out br
+
+    out hash2html(sqlite2hash("select * from repos",db)) + br
+    out depth + ' 階層まで検索' + br
+
+    shell ='find ~  -maxdepth ' + depth + ' -type d -name ".git"  2>/dev/null'
+    ret = run_shell(shell ).strip.split_nl
+    out br
+    ret.each do |line|
+        dir = File.dirname(line)
+        out line + spc + a_tag(File.basename(dir),'?view=search_repo&upd=add_repo&path=' + ENC.url(dir))
         out br
-        out ret.nl2br
+    end
+
 end
 
 def v_pull(db)
 
     home = `echo $HOME`.strip
+    repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
+
     threads = []
-    GIT_REPOS.each do |repo |
+    repos.each do |repo |
         threads << Thread.new do
             dir = repo
             if dir_exist?(dir)
@@ -100,10 +129,13 @@ def insert_git_log(db)
     sqlite2hash('delete from commits', db)
     out br
 
+    repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
+
+
     all_start = Time.now
     home = `echo $HOME`.strip
     threads = []
-    GIT_REPOS.each do |repo |
+    repos.each do |repo |
         out_put 'repo ' + File.basename(repo)
         dir = repo
         return unless dir_exist?(repo)
@@ -217,7 +249,7 @@ def v_repo(p,db)
     out br
 
 	["commits","stats"].each do | view2_name |
-		out a_tag(same_red(view2_name,view2) ,"?view=repo&view2=" + view2_name+ "&repo=" + URI.encode_www_form_component(repo) )
+		out a_tag(same_red(view2_name,view2) ,"?view=repo&view2=" + view2_name+ "&repo=" + ENC.url(repo) )
 	end
 	out br
 
@@ -253,7 +285,7 @@ def v_repo(p,db)
                 row['date_'] = format_recent_date(row['date_'])
 
                 row['message'] =color_val(row['message'],filter) if filter.length > 0
-                row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + URI.encode_www_form_component(repo))
+                row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
                 row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に
 
                 row['author'] = color_val(row['author'],filter) if filter.length > 0
@@ -298,13 +330,14 @@ def v_list(p,db)
     out '<div class="flex-container" >'
     htmls = {}
 
-    GIT_REPOS.each do |repo |
+    repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
+    repos.each do |repo |
 
         dir = repo
         return unless dir_exist?(dir)
 
         html =  '<div class="flex-item" >'
-        html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + URI.encode_www_form_component(dir)) + spc
+        html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + ENC.url(dir)) + spc
 
 
         # トータルコミット数
@@ -333,7 +366,6 @@ def v_list(p,db)
         # configs = run_shell("git config --list")
         # html <<  br + configs.nl2br.trim_spreadable(30)
         # html <<  br
-        html <<  ' - '
         ["7","100"].each do | days|
             html <<  stat_period_commit_peson(days)
         end
