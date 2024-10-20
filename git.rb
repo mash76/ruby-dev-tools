@@ -19,8 +19,9 @@ def preview_form
                 padding: 15px; background:#fff; border-radius:10px;
                 opacity: 0.9;
                 vertical-align:top;
-    ">aaa</div>
+    "></div>
     <script>
+        $(document).ready(function(){
             $(document).on("mouseover", "a", function(event) {
                 event.preventDefault();
                 hash =  $(event.target).attr("hash")
@@ -32,8 +33,18 @@ def preview_form
                 })
             })
             $(document).on("click", "div#diff_preview", function(event) {
-                    $("#diff_preview").hide()
-                })
+                $("#diff_preview").hide()
+            })
+
+            $(window).resize(() => {
+                moveWin()
+            })
+            function moveWin(){
+                let width = $(window).width()
+                $("#diff_preview").css("left",width - 620)
+            }
+            moveWin()
+        })
     </script> '
 
 end
