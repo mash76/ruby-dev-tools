@@ -5,7 +5,8 @@
 # git clone https://github.com/electron/electron.git
 
 LIST_LOG_LIMIT = 30 # list画面でのログ表示件数
-GIT_SHOW_SHELL = false
+GIT_SHOW_SHELL = false # シェルコマンド見せるか のスイッチ
+IMPORT_SIZE = false # 全件はfalse テスト用 impot
 SQLITE_PATH_GIT = 'files/git.sql3'
 
 def ajax_git(p)
@@ -113,7 +114,8 @@ def v_list(p,db)
         end
 
         # log
-        sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash
+        sql = "select author,commit_date date_,
+                files_ct fi ,add_file_ct f_add,del_file_ct f_del, add_line_ct ad ,del_line_ct dl,message,hash
                         from commits where repo='" + File.basename(repo) + "'"
         sql += " and files_ct > 0 " if ex_merge.length > 0
         sql += " order by commit_date desc limit " + LIST_LOG_LIMIT.to_s
@@ -207,6 +209,8 @@ def v_repo(p,db)
             filter = p[:filter] || ""
             limit = p[:limit] || 2000
             ex_merge = p[:ex_merge] || ''
+            f_add = p[:f_add] || ''
+            f_del = p[:f_del] || ''
 
             out '<form id="f1" method="get" action="?">'
             out i_hidden("view","repo")
@@ -214,12 +218,16 @@ def v_repo(p,db)
             out 'filter ' + i_text("filter",filter,40) + br
             out 'limit ' + i_text("limit",limit.to_s) + br
             out i_checkbox('ex_merge',ex_merge, 'マージコミット除外')
+            out i_checkbox('f_add',f_add, 'ファイル追加')
+            out i_checkbox('f_del',f_del, 'ファイル削除')
             out i_submit_trans
             out '</form>'
 
-            sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
+            sql = "select author,commit_date date_,files_ct fi ,add_file_ct f_add,del_file_ct f_del, add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
             sql += " and files_ct > 0 " if ex_merge.length > 0
-            sql += " and  ) " if filter.length > 0
+            sql += " and add_file_ct > 0 " if f_add.length > 0
+            sql += " and del_file_ct > 0 " if f_del.length > 0
+            sql += " and ( author like '%" + filter + "%' or message like '%" + filter + "%' ) " if filter.length > 0
             sql += "order by commit_date desc limit " + limit.to_s
             recent_logs = sqlite2hash(sql,db)
 
@@ -311,8 +319,6 @@ end
 
 def insert_git_log(db)
 
-    size = false # 全件はfalse テスト用
-
     sqlite2hash('delete from commits', db)
     out br
 
@@ -336,12 +342,12 @@ def insert_git_log(db)
             end
 
             sql_inserts = ""
-            all_commits = recent_commit_from_git(repo,size)
+            all_commits = recent_commit_from_git(repo,IMPORT_SIZE)
 
             # ファイル数、削除票数、
             num_start = Time.now
             shell = 'git -C ' + dir + ' log --numstat --oneline ' #　-n 10
-            shell += ' -n ' + size.to_s if size != false
+            shell += ' -n ' + IMPORT_SIZE.to_s if IMPORT_SIZE != false
             ret = run_shell(shell)
             rets = ret.split_nl
             out br
@@ -353,7 +359,7 @@ def insert_git_log(db)
                 # 10文字の英数 + 空白で始まっていたら
                 if log_line =~ /^([0-9a-f]{7,10})\s/
                     hash = $1
-                    commit_details[hash] = {files: 0,adds: 0,dels: 0}
+                    commit_details[hash] = {files: 0,adds: 0,dels: 0,f_adds:0, f_dels:0}
                 else
                     # add del filename
                     commit_details[hash][:files] += 1
@@ -363,9 +369,61 @@ def insert_git_log(db)
                 end
             end
 
+
+            shell = 'git -C ' + dir + ' log --name-status --diff-filter=A --pretty=format:"%h" ' #　-n 10
+            shell += ' -n ' + IMPORT_SIZE.to_s if IMPORT_SIZE != false
+            file_add_commits = run_shell(shell).split_nl
+            out file_add_commits.join('<br/>')
+            hash = ""
+            file_add_commits.each do |log_line|
+                # 10文字の英数 + 空白で始まっていたら
+                if log_line.strip.length > 0
+                    if log_line =~ /^([0-9a-f]{7,10})\s*/
+                        hash = $1
+                    else
+                        elements = log_line.split(/\s+/)
+                       # puts 'line:' + log_line
+                        if commit_details.key?(hash)
+                            commit_details[hash][:f_adds] += 1
+                        else
+                            out sRed('no hash ') + hash + br
+                        end
+                    end
+                else
+                    out 'empty_line'
+                end
+            end
+
+            shell = 'git -C ' + dir + ' log --name-status --diff-filter=D --pretty=format:"%h" ' #　-n 10
+            shell += ' -n ' + IMPORT_SIZE.to_s if IMPORT_SIZE != false
+            file_del_commits = run_shell(shell).split_nl
+            out file_del_commits.join('<br/>')
+            hash = ""
+            file_del_commits.each do |log_line|
+                # 10文字の英数 + 空白で始まっていたら
+                if log_line.strip.length > 0
+                    if log_line =~ /^([0-9a-f]{7,10})\s*/
+                        hash = $1
+                    else
+                        elements = log_line.split(/\s+/)
+                       # puts 'line:' + log_line
+                        if commit_details.key?(hash)
+                            commit_details[hash][:f_dels] += 1
+                        else
+                            out sRed('no hash ') + hash + br
+                        end
+                    end
+                else
+                    out 'empty_line'
+                end
+            end
+
+
+            #insert文 生成
             sql_inserts_base = "insert into commits
                     (repo , hash , author , message ,commit_date,
-                    files_ct,add_line_ct,del_line_ct ,  created_at) values"
+                    files_ct,add_file_ct ,del_file_ct, add_line_ct,del_line_ct ,  created_at)
+                    values "
             sql_values = []
 
             all_commits.each do |key,row|
@@ -386,6 +444,8 @@ def insert_git_log(db)
                     '" + message + "',
                     '" + row['date'] + "',
                     " + detail[:files].to_s + ",
+                    " + detail[:f_adds].to_s + ",
+                    " + detail[:f_dels].to_s + ",
                     " + detail[:adds].to_s + ",
                     " + detail[:dels].to_s + " ,
                     '" + now_time_str + "') "
