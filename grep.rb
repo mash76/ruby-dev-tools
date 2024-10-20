@@ -23,7 +23,7 @@ def main
         path_id = index if hash['path'] == path
     end
     out br
-    out s150(sBlue(path)) + br
+    out s150(sBlue(File.basename(path))) + spc + sSilver(path) + br
 
 
     filter = p[:filter].to_s
@@ -74,8 +74,9 @@ def main
     pattern = Regexp.new("(" + Regexp.escape(filter) + ")",Regexp::IGNORECASE)
     ct = 1
     files2.each do |line|
-        mtime = File.stat(line).mtime.strftime(TIME_FMT.YYYYMMDDHHIISS)
-        out ct.to_s + spc + line.gsub(path,"").gsub(pattern,sRed('\1')) + spc +  sSilver(mtime) + br
+        stat = File.stat(line)
+        mtime = stat.mtime.strftime(TIME_FMT.YYYYMMDDHHIISS)
+        out ct.to_s + spc + line.gsub(path,"").gsub(pattern,sRed('\1')) + spc +  sSilver(mtime) + spc + stat.size.to_s + br
         ct += 1
     end
 end
@@ -90,7 +91,7 @@ def ext_stat( path, filter, exclude )
         shell += ' | grep -iv "' + word + '"' if word.length > 0
     end
 
-    files_str = run_shell(shell ,false)
+    files_str = run_shell(shell ,20)
     files = files_str.split_nl
     stat = {}
     files.each do |line|

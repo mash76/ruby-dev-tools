@@ -30,8 +30,7 @@ def main
     view = p[:view] || 'links'
 
 	['links','manage','new','apps'].each do | view_name |
-		disp = view_name == view ? sRed(view_name) : view_name
-		out a_tag(disp,'/dev/links?view=' + view_name) + spc
+		out a_tag(same_red(view_name,view),'/dev/links?view=' + view_name) + spc
 	end
     out br
 
@@ -156,16 +155,14 @@ def v_manage(p,db)
     out 'order_by ' + i_text('order_by',order_by,20) + spc
     orders = ['id','cate1','name','shortcut','href','use_count','last_use_date','created_at']
     orders.each do |order_val|
-        disp = (order_val == order_by ? sRed(order_val) : order_val)
-        out a_tag(disp, "javascript:setVal('order_by','" + order_val + "')") + spc
+        out a_tag(same_red(order_val,order_by), "javascript:setVal('order_by','" + order_val + "')") + spc
     end
 
     out br
     out 'order_dir ' + i_text('order_dir',order_dir,20) + spc
     order_dirs = ['asc','desc']
     order_dirs.each do |o_dir|
-        disp = (order_dir == o_dir ? sRed(o_dir) : o_dir)
-        out a_tag(disp, "javascript:setVal('order_dir','" + o_dir + "')") + spc
+        out a_tag(same_red(o_dir,order_dir), "javascript:setVal('order_dir','" + o_dir + "')") + spc
     end
 
     out i_submit_trans

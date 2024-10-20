@@ -59,7 +59,12 @@ class String
     return str
   end
 
-  def split_nl() return self.split(/\r\n|\r|\n/) end # \r か \n か \r\n で分割
+  def split_nl()
+
+    # これやると日本語消える
+    #self.encode!('UTF-8', 'binary', invalid: :replace, undef: :replace, replace: '')
+    return self.split(/\r\n|\r|\n/)   # \r か \n か \r\n で分割
+  end
   def split_tab() return self.split(/\t/) end
 end
 
@@ -201,14 +206,14 @@ end
 
 
 # class border セル境界線つける t_hover = 選択行を強調
-def hash2html(hashes,p_class = "border")
+def hash2html(hashes,p_class = "border",id = "")
   unless hashes.is_a?(Array)
     out sRed("not array ") + __FILE__.to_s + spc + __LINE__.to_s + spc + __method__.to_s + br
     return ''
   end
   return '' if hashes.length == 0
 
-  html = "<table class='" + p_class + "'><tr>"
+  html = '<table id="' + id + '" class="' + p_class + '"><tr>'
   hashes[0].each  { | key,value | html << '  <th nowrap>' + key.to_s + "</th>\n" }
   html << " </tr>\n"
 
@@ -396,7 +401,11 @@ def spc2() return spc * 2 end
 def spc3() return spc * 3 end
 def nl() return "\n" end
 
-def ajax(p)
+def same_red(name,match)
+  return  (name == match) ? sCrimson(name) : name
+end
+
+def ajax_common(p)
 
     if p.key?("finderselect") && p['finderselect'].to_s.length > 0
         shell = 'open -R "' + URI.decode_www_form_component(p['finderselect']) + '"'
@@ -421,6 +430,7 @@ end
 
 def run_shell(shell,trim_len = 30)
   ret = `#{shell} 2>&1 `
+  puts 'shell: ' + shell
   out sSilver(shell.trim_spreadable(trim_len)) << spc << ret.split_nl.length.to_s if trim_len != NO_DISP
   ret
 end

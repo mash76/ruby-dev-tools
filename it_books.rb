@@ -27,8 +27,7 @@ def main
 
 	# ナビ
 	['import','stat','list','db_stat','db_renew'].each do | view_name |
-		disp = view_name == view ? sRed(view_name) : view_name
-		out a_tag(disp + ' ','/dev/it_books?view=' + view_name)
+		out a_tag(same_red(view_name,view) ,'/dev/it_books?view=' + view_name) + spc
 	end
 	out '<hr/>'
 

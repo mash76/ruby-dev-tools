@@ -17,7 +17,7 @@ def main()
     p = $params
 	db = SQL3.connect_or_create(PDF_SQLITE_PATH,'')
 
-    ret_ajax_bool = ajax(p)
+    ret_ajax_bool = ajax_common(p)
     return if ret_ajax_bool # ajax実行したならそこで終了
 
     # PDFファイルの読み込み
@@ -28,7 +28,7 @@ def main()
         return
     end
 
-    pdf_ajax(p,db)
+    ajax_pdf(p,db)
 
     out html_header("pdf reader")
     out '<script>' + File.read("_form_events.js") + '</script>'
@@ -66,9 +66,8 @@ def main()
     out '</div></div>'
 
 
-    ['list'].each do | val |
-        disp = (val == view) ? sRed(val) : val
-        out a_tag(disp,'?view=' + val + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
+    ['list'].each do | v |
+        out a_tag(same_red(v,view),'?view=' + v + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
     end
     out br
 
@@ -104,9 +103,8 @@ def main()
     out 'real size ' + (real_size / 1024.0 / 1024.0).round(2).to_s + sSilver('mb') + br
 
 
-    ['convert','show','del'].each do | val |
-        disp = (val == view) ? sRed(val) : val
-        out a_tag(disp,'?view=' + val + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
+    ['convert','show','del'].each do | v |
+        out a_tag(same_red(v,view),'?view=' + v + '&path=' + URI.encode_www_form_component(pdf_path)) + spc
     end
     out br
 
@@ -135,14 +133,20 @@ def v_list(p)
     shell += ' | grep ' + filter if filter.length > 0
     shell += ' | head -' + limit_list.to_s
     pdfs = run_shell(shell)
-    pdf_ary = pdfs.split("\n")
+    pdf_ary = pdfs.split_nl
     out br
-    pdf_ary.each do |line|
-        out line.sub(PDF_DIR,'').gsub(filter,sRed(filter)) + spc
-        out a_tag(sSilver('show') , '/dev/pdf_reader?view=show&path=' + URI.encode_www_form_component(line)) + spc
+    pdf_ary.each do |fpath|
+        out fpath.sub(PDF_DIR,'').gsub(filter,sRed(filter)) + spc
+        out a_tag(sSilver('show') , '/dev/pdf_reader?view=show&path=' + URI.encode_www_form_component(fpath)) + spc
 
         # すでにdirがあれば
-        ino = File.stat(line).ino
+        puts 'line -- ' + fpath
+        unless File.exist?(fpath)
+            out  sRed('no file ') + fpath + br
+            next
+        end
+
+        ino = File.stat(fpath).ino
         if File.exist?(PDF_OUTPUT_PATH + '/' + ino.to_s)
             out sBlue('展開済')
         else
@@ -156,12 +160,12 @@ def v_list(p)
     out br + br
     shell = 'find ' + PDF_OUTPUT_PATH + '/* -type d'
     ret = run_shell(shell,NO_DISP)
-    ary = ret.split("\n")
+    ary = ret.split_nl
     ary.each do |line|
         out line + spc
         shell = 'find ' + line + ' -type f | wc -l'
         ret = run_shell(shell,NO_DISP)
-        out "ret " + ret + br
+        out "files(page+thumb) " + ret + br
     end
 end
 
@@ -246,7 +250,7 @@ def v_convert(pdf_path )
     threads.each(&:join)
 end
 
-def pdf_ajax(p,db)
+def ajax_pdf(p,db)
 
     if p[:ajax] && p[:ajax] == 'save'
         puts 'save '

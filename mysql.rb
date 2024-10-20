@@ -15,12 +15,13 @@ out i_submit_trans "検索"
 out '</form>'
 
 
+
 out conns.length.to_s + sSilver(" schemas ")
 conns.keys.each do |conn_name|
-  out a_tag(conn_name, '?schemas=' + conn_name) + spc
+  out a_tag(same_red(conn_name,schemas) , '?schemas=' + conn_name) + spc
 end
 
-out spc + 'all' + br
+out spc + a_tag('all', '?') + spc + br
 
 conns = { schemas => $mysql_conns[schemas] }  if schemas != 'all'
 

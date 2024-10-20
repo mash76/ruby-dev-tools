@@ -35,7 +35,7 @@ def main()
     p_keys.each { |val| p[val] = "" } # 空白の値を入れる
     $params.each { |key,val| p[key] = val.to_s } # 空白の
 
-    ret_ajax = ajax(p)
+    ret_ajax = ajax_common(p)
     return if ret_ajax
 
 

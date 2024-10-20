@@ -13,8 +13,7 @@ chash_gem = Concurrent::Hash.new
 
 # ナビ
 ['list','env' ,'which','ruby'].each do | view_name |
-    disp = (view_name == view ? sRed(view_name) : view_name)
-    out a_tag(disp,'/dev/gem?view=' + view_name) + spc
+    out a_tag(same_red(view_name,view) ,'/dev/gem?view=' + view_name) + spc
 end
 
 

@@ -11,8 +11,7 @@ sql_text = p[:sql_text].to_s
 
 out sBlue("mysql sql実行") + br
 conns.each do |key,hash|
-  disp = (key == conn_name ? sRed(key) : key)
-  out a_tag(disp + spc,"?conn_name=" + key)
+  out a_tag(same_red(key,conn_name),"?conn_name=" + key)
 end
 
 out '<form method="get" action="?">'
