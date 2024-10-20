@@ -4,7 +4,7 @@
 # git clone https://github.com/facebook/react.git
 # git clone https://github.com/electron/electron.git
 
-LIST_LOG_LIMIT = 20
+LIST_LOG_LIMIT = 20 # list画面でのログ表示件数
 GIT_SHOW_SHELL = false
 SQLITE_PATH_GIT = 'files/git.sql3'
 
@@ -315,8 +315,8 @@ def get_diff(repo,commit_hash)
             # line = sBlue(line) if line.start_with?("diff ")
             # line = sGreen(line) if line.start_with?("+++ ")
             line = '<hr/>' + sBG(line.gsub('--- a/','')) if line.start_with?("--- ")
-            line = sRedBG(line) if line.start_with?("- ")
-            line = sGreenBG(line) if line.start_with?("+ ")
+            line = sRedBG(line) if line.start_with?("-")
+            line = sGreenBG(line) if line.start_with?("+")
             line = sOrange(line) if line.start_with?("@@ ")
             html << line
         end
@@ -380,6 +380,8 @@ def v_list(p,db)
         hashes = recent_logs.map do |row|
             row['date_'] = format_recent_date(row['date_'])
             row['message'] =row['message'].trim(20)
+            row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+
             row['author'] =row['author'].trim(15)
             row.delete('hash')
             row

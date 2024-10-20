@@ -73,12 +73,14 @@ def main
     # file_filtered = files.select { |line| line.include?(filter) }
     pattern = Regexp.new("(" + Regexp.escape(filter) + ")",Regexp::IGNORECASE)
     ct = 1
+    records = []
     files2.each do |line|
         stat = File.stat(line)
         mtime = stat.mtime.strftime(TIME_FMT.YYYYMMDDHHIISS)
-        out ct.to_s + spc + line.gsub(path,"").gsub(pattern,sRed('\1')) + spc +  sSilver(mtime) + spc + stat.size.to_s + br
+        records << { path: line.gsub(path,"").gsub(pattern,sRed('\1')) , mtime: sSilver(mtime), size: (stat.size / 1024.0).round(1).to_s + sSilver('k')}
         ct += 1
     end
+    out hash2html(records)
 end
 
 def ext_stat( path, filter, exclude )
