@@ -73,7 +73,7 @@ def v_search_repo(p,db)
     out hash2html(sqlite2hash("select * from repos",db)) + br
     out depth + ' 階層まで検索' + br
 
-    shell ='find ~  -maxdepth ' + depth + ' -type d -name ".git"  2>/dev/null'
+    shell ='find ~  -maxdepth ' + depth + ' -type d -name ".git"  2>/dev/null | grep -v find:'
     ret = run_shell(shell ).strip.split_nl
     out br
     ret.each do |line|
@@ -299,28 +299,29 @@ def v_repo(p,db)
     if view2 == 'commit_detail'
         hash = p[:hash]
         out view2 + spc + hash + br
-        html = get_diff(repo,hash)
+        html = diff(repo,hash)
         out '<hr/><pre>' + html.join(br) + '</pre>'
     end
 end
 
-def get_diff(repo,commit_hash)
+def diff(repo,commit_hash)
 
-        shell = 'git -C ' + repo  + ' show ' + commit_hash
-        ret = run_shell(shell).strip.split_nl
-        out br
-        html = []
-        ret.each do |line |
-            next if (line.start_with?("index ") || line.start_with?("+++ ") || line.start_with?("diff "))
-            # line = sBlue(line) if line.start_with?("diff ")
-            # line = sGreen(line) if line.start_with?("+++ ")
-            line = '<hr/>' + sBG(line.gsub('--- a/','')) if line.start_with?("--- ")
-            line = sRedBG(line) if line.start_with?("-")
-            line = sGreenBG(line) if line.start_with?("+")
-            line = sOrange(line) if line.start_with?("@@ ")
-            html << line
-        end
-        html
+    shell = 'git -C ' + repo  + ' show ' + commit_hash
+    ret = run_shell(shell).strip.split_nl
+    out br
+    html = []
+    ret.each do | line |
+        next if (line.start_with?("index ") || line.start_with?("+++ ") || line.start_with?("diff "))
+        line = ENC.html(line)
+        # line = sBlue(line) if line.start_with?("diff ")
+        # line = sGreen(line) if line.start_with?("+++ ")
+        line = '<hr/>' + sBG(line.gsub('--- a/','')) if line.start_with?("--- ")
+        line = sRedBG(line) if line.start_with?("-")
+        line = sGreenBG(line) if line.start_with?("+")
+        line = sOrange(line) if line.start_with?("@@ ")
+        html << line
+    end
+    html
 end
 
 def v_list(p,db)

@@ -60,7 +60,7 @@ class String
 
     str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + str_origin + '</div>'
 
-        # str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + CGI.escapeHTML(str_origin).nl2br + '</div>'
+    # str += '<div id="trim' + $id_index.to_s + '" style="background:#f9f9f9; display:none;">' + CGI.escapeHTML(str_origin).nl2br + '</div>'
 
     return str
   end
@@ -104,6 +104,10 @@ module ENC
   def self.url(path)
     return URI.encode_www_form_component(path)
   end
+  def self.html(path)
+    return CGI.escapeHTML(path)
+  end
+
 end
 
 
