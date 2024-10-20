@@ -4,7 +4,7 @@
 # git clone https://github.com/facebook/react.git
 # git clone https://github.com/electron/electron.git
 
-LIST_LOG_LIMIT = 20 # list画面でのログ表示件数
+LIST_LOG_LIMIT = 30 # list画面でのログ表示件数
 GIT_SHOW_SHELL = false
 SQLITE_PATH_GIT = 'files/git.sql3'
 
@@ -59,6 +59,194 @@ def main
     v_list(p,db) if view == "list"
 end
 
+def v_list(p,db)
+
+    repo = p[:repo] || ''
+    ex_merge = p[:ex_merge] || ''
+
+    out '<form id="f1" >'
+    out i_hidden("view","list")
+    out i_checkbox('ex_merge',ex_merge, 'マージコミット除外')
+    out i_submit_trans
+    out '</form>'
+
+    out '<div class="flex-container" >'
+    htmls = {}
+    repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
+    repos.each do |repo |
+
+        dir = repo
+        return unless dir_exist?(dir)
+
+        html =  '<div class="flex-item" >'
+        html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + ENC.url(dir)) + spc
+
+
+        # トータルコミット数
+        ret = sqlite2hash("select min(commit_date) start,count(*) commit_ct from commits where repo='" + File.basename(repo) + "'",db,false)
+        puts ' ret.inspect ' + ret.inspect
+        if ret.length > 0
+            html << s150(ret[0]['commit_ct'].to_s)
+            start_str = ret[0]['start']
+            if start_str == nil
+                start_str = 'コミットなし'
+            else
+                start_str = Time.parse(start_str).strftime(TIME_FMT.YYYYMM)
+            end
+            html <<  spc + start_str << spc
+        end
+
+        # local branch
+        # html <<  br + sBG('local branches ')
+        branches = run_shell('git -C ' + dir + ' branch',false) #
+        html << branches.strip.nl2br + spc
+
+        remotes = run_shell('git -C ' + dir + ' remote -v' ,false)
+        html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip.gsub('.git','') + br
+
+
+        # configs = run_shell("git config --list")
+        # html <<  br + configs.nl2br.trim_spreadable(30)
+        # html <<  br
+        ["7","100"].each do | days|
+            html <<  stat_period_commit_peson(days)
+        end
+
+        # log
+        sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash
+                        from commits where repo='" + File.basename(repo) + "'"
+        sql += " and files_ct > 0 " if ex_merge.length > 0
+        sql += " order by commit_date desc limit " + LIST_LOG_LIMIT.to_s
+
+        recent_logs = sqlite2hash(sql,db,false)
+        html <<  br
+
+        if recent_logs.length == 0
+            html << sRed('no commit')
+        else
+            days = ((Time.now - Time.parse(recent_logs[0]['date_'])) / 86400).floor()
+            html << sRevRed('outdated!') + spc + days.to_s + sSilver('days') if days > 100
+        end
+
+
+
+        hashes = recent_logs.map do |row|
+            row['date_'] = format_recent_date(row['date_'])
+            row['message'] =row['message'].trim(20)
+            row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+
+            row['author'] =row['author'].trim(15)
+            row.delete('hash')
+            row
+        end
+        hashes = records_zero_silver(hashes)
+        html <<  hash2html(hashes)
+
+        # html <<  br + sBG("remote branches ")
+        # branches = run_shell "git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:short) %(refname:short)' | head -10"
+        # r_branches = branches.split_nl
+        # html <<  br
+        # r_branches.each do |line|
+        #     html <<  line.trim_spreadable(45) + br
+        # end
+
+        # html <<  br + sBG("tags ")
+        # branches = run_shell "git tag --sort=-creatordate | head -15" #
+        # html <<  br + branches.nl2br
+
+        html <<  '</div>'
+        htmls[dir] = html
+    end
+    htmls.each do |key,html2|
+        out html2
+    end
+    out '</div>'
+end
+
+def v_repo(p,db)
+
+    repo = p[:repo]
+    view2 = p[:view2] || 'commits'
+
+
+    Dir.chdir(repo) do
+        out s150(sBlue(File.basename(repo))) + spc
+
+        branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
+        out spc + s150(branche_ct)
+
+        repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
+        out spc + repo_start_date
+
+        ["7","100"].each do | days|
+            out stat_period_commit_peson(days)
+        end
+
+        out a_tag('dir' , "javascript:openFile('" + repo + "')")
+    end
+    out br
+
+	["commits","stats"].each do | view2_name |
+		out a_tag(same_red(view2_name,view2) ,"?view=repo&view2=" + view2_name+ "&repo=" + ENC.url(repo) )
+	end
+	out br
+
+    if view2 == 'stats'
+            # 月の統計
+            repo_month_stats = stats_repo_month(db,repo)
+            out hash2html(repo_month_stats) + br
+            # ユーザー単位の統計
+            author_commit_stats = stats_author(db,repo)
+            author_commit_stats.map { |r| r['author'] = r['author'].trim(20) }
+            out hash2html(author_commit_stats)
+    end
+
+    if view2 == 'commits'
+
+        Dir.chdir(repo) do
+            filter = p[:filter] || ""
+            limit = p[:limit] || 2000
+            ex_merge = p[:ex_merge] || ''
+
+            out '<form id="f1" method="get" action="?">'
+            out i_hidden("view","repo")
+            out i_hidden("repo",repo)
+            out 'filter ' + i_text("filter",filter,40) + br
+            out 'limit ' + i_text("limit",limit.to_s) + br
+            out i_checkbox('ex_merge',ex_merge, 'マージコミット除外')
+            out i_submit_trans
+            out '</form>'
+
+            sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
+            sql += " and files_ct > 0 " if ex_merge.length > 0
+            sql += " and  ) " if filter.length > 0
+            sql += "order by commit_date desc limit " + limit.to_s
+            recent_logs = sqlite2hash(sql,db)
+
+            commit_records = recent_logs.map do |row|
+                row['date_'] = format_recent_date(row['date_'])
+
+                row['message'] =color_val(row['message'],filter) if filter.length > 0
+                row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
+                row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に
+
+                row['author'] = color_val(row['author'],filter) if filter.length > 0
+                row
+            end
+            commit_records = records_zero_silver(commit_records)
+            out hash2html(commit_records,'t_hover border')
+        end
+    end
+
+    if view2 == 'commit_detail'
+        hash = p[:hash]
+        out view2 + spc + hash + br
+        html = diff(repo,hash)
+        out '<hr/><pre>' + html.join(br) + '</pre>'
+    end
+end
+
+
 def v_search_repo(p,db)
 
     depth = p[:depth] || "3"
@@ -86,7 +274,6 @@ end
 
 def v_pull(db)
 
-    home = `echo $HOME`.strip
     repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
 
     threads = []
@@ -133,7 +320,6 @@ def insert_git_log(db)
 
 
     all_start = Time.now
-    home = `echo $HOME`.strip
     threads = []
     repos.each do |repo |
         out_put 'repo ' + File.basename(repo)
@@ -223,86 +409,6 @@ def insert_git_log(db)
 end
 
 
-def v_repo(p,db)
-
-    limit = 120
-    home = `echo $HOME`.strip
-
-    repo = p[:repo]
-    view2 = p[:view2] || 'commits'
-
-    Dir.chdir(repo) do
-        out s150(sBlue(File.basename(repo))) + spc
-
-        branche_ct = run_shell("git rev-list --count HEAD" , GIT_SHOW_SHELL) #
-        out spc + s150(branche_ct)
-
-        repo_start_date = run_shell('git log --reverse --pretty=format:"%ad" --date=short | head -n 1' , GIT_SHOW_SHELL) #
-        out spc + repo_start_date
-
-        ["7","100"].each do | days|
-            out stat_period_commit_peson(days)
-        end
-
-        out a_tag('dir' , "javascript:openFile('" + repo + "')")
-    end
-    out br
-
-	["commits","stats"].each do | view2_name |
-		out a_tag(same_red(view2_name,view2) ,"?view=repo&view2=" + view2_name+ "&repo=" + ENC.url(repo) )
-	end
-	out br
-
-    if view2 == 'stats'
-            # 月の統計
-            repo_month_stats = stats_repo_month(db,repo)
-            out hash2html(repo_month_stats) + br
-            # ユーザー単位の統計
-            author_commit_stats = stats_author(db,repo)
-            author_commit_stats.map { |r| r['author'] = r['author'].trim(20) }
-            out hash2html(author_commit_stats)
-    end
-
-    if view2 == 'commits'
-
-        Dir.chdir(repo) do
-            filter = p[:filter] || ""
-            limit = p[:limit] || 2000
-            out '<form id="f1" method="get" action="?">'
-            out i_hidden("view","repo")
-            out i_hidden("repo",repo)
-            out 'filter ' + i_text("filter",filter,40) + br
-            out 'limit ' + i_text("limit",limit.to_s) + br
-            out i_submit_trans
-            out '</form>'
-
-            sql = "select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash from commits where repo='" + File.basename(repo) + "' "
-            sql += " and (author like '%" + filter + "%' or message like '%" + filter + "%' ) " if filter.length > 0
-            sql += "order by commit_date desc limit " + limit.to_s
-            recent_logs = sqlite2hash(sql,db)
-
-            commit_records = recent_logs.map do |row|
-                row['date_'] = format_recent_date(row['date_'])
-
-                row['message'] =color_val(row['message'],filter) if filter.length > 0
-                row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
-                row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に
-
-                row['author'] = color_val(row['author'],filter) if filter.length > 0
-                row
-            end
-            commit_records = records_zero_silver(commit_records)
-            out hash2html(commit_records,'t_hover border')
-        end
-    end
-
-    if view2 == 'commit_detail'
-        hash = p[:hash]
-        out view2 + spc + hash + br
-        html = diff(repo,hash)
-        out '<hr/><pre>' + html.join(br) + '</pre>'
-    end
-end
 
 def diff(repo,commit_hash)
 
@@ -324,92 +430,7 @@ def diff(repo,commit_hash)
     html
 end
 
-def v_list(p,db)
 
-    home = `echo $HOME`.strip
-
-    out '<div class="flex-container" >'
-    htmls = {}
-
-    repos = sqlite2hash("select * from repos",db,false).pluck('local_full_path')
-    repos.each do |repo |
-
-        dir = repo
-        return unless dir_exist?(dir)
-
-        html =  '<div class="flex-item" >'
-        html <<  a_tag( s150(sBlueBG(File.basename(repo))) , '?view=repo&repo=' + ENC.url(dir)) + spc
-
-
-        # トータルコミット数
-        ret = sqlite2hash("select min(commit_date) start,count(*) commit_ct from commits where repo='" + File.basename(repo) + "'",db,false)
-        puts ' ret.inspect ' + ret.inspect
-        if ret.length > 0
-            html << s150(ret[0]['commit_ct'].to_s)
-            start_str = ret[0]['start']
-            if start_str == nil
-                start_str = 'コミットなし'
-            else
-                start_str = Time.parse(start_str).strftime(TIME_FMT.YYYYMM)
-            end
-            html <<  spc + start_str << spc
-        end
-
-        # local branch
-        # html <<  br + sBG('local branches ')
-        branches = run_shell('git -C ' + dir + ' branch',false) #
-        html << branches.strip.nl2br + spc
-
-        remotes = run_shell('git -C ' + dir + ' remote -v' ,false)
-        html <<  a_tag(" site",remotes.split_nl[0].gsub("origin","").gsub("(fetch)","")).strip.gsub('.git','') + br
-
-
-        # configs = run_shell("git config --list")
-        # html <<  br + configs.nl2br.trim_spreadable(30)
-        # html <<  br
-        ["7","100"].each do | days|
-            html <<  stat_period_commit_peson(days)
-        end
-
-        # log
-        # recent_logs = recent_commit_from_git(LIST_LOG_LIMIT)
-
-        recent_logs = sqlite2hash("select author,commit_date date_,files_ct fi ,add_line_ct ad ,del_line_ct dl,message,hash
-                        from commits where repo='" + File.basename(repo) + "'
-                        order by commit_date desc limit " + LIST_LOG_LIMIT.to_s,db,false)
-
-        hashes = recent_logs.map do |row|
-            row['date_'] = format_recent_date(row['date_'])
-            row['message'] =row['message'].trim(20)
-            row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
-
-            row['author'] =row['author'].trim(15)
-            row.delete('hash')
-            row
-        end
-        hashes = records_zero_silver(hashes)
-        html <<  hash2html(hashes)
-
-        # html <<  br + sBG("remote branches ")
-        # branches = run_shell "git for-each-ref --sort=-committerdate refs/remotes/ --format='%(committerdate:short) %(refname:short)' | head -10"
-        # r_branches = branches.split_nl
-        # html <<  br
-        # r_branches.each do |line|
-        #     html <<  line.trim_spreadable(45) + br
-        # end
-
-        # html <<  br + sBG("tags ")
-        # branches = run_shell "git tag --sort=-creatordate | head -15" #
-        # html <<  br + branches.nl2br
-
-        html <<  '</div>'
-        htmls[dir] = html
-    end
-    htmls.each do |key,html2|
-        out html2
-    end
-    out '</div>'
-end
 
 def format_recent_date(date_str)
     day = Time.parse(date_str)

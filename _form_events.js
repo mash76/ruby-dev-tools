@@ -63,7 +63,7 @@
     })
 
     // checkboxをクリックしたらsubmit
-    $("form input[type=checkbox]").keyup( (e) => { $('#f1').submit() })
+    $("form input[type=checkbox]").change( (e) => { $('#f1').submit() })
 
     // textに値が入ったら青に
     $("form input[type=text]").keyup( (e) => { colorUsedTextBox() })

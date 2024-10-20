@@ -356,7 +356,7 @@ def a_tag_bg(name,href,title ='') return '<a title="' + title + '" href="' + hre
 
 def i_hidden(name,value) return '<input type="hidden" id="' + name + '" name="' + name + '" value="' + value + '">' end
 def i_text(name,value,size=10) return '<input type="text" id="' + name + '" name="' + name + '" value="' + CGI.escapeHTML(value) + '" placeholder="' + name + '" size="' + size.to_s + '">' end
-def i_checkbox(name,value) return '<label><input type="checkbox" id="' + name + '" name="' + name + '" value="1" ' + (value.to_s.length > 0 ? " checked " : "") + '>' + name + "</label>" end
+def i_checkbox(name,value,label = '') return '<label><input type="checkbox" id="' + name + '" name="' + name + '" value="1" ' + (value.to_s.length > 0 ? " checked " : "") + '>' + label + "</label>" end
 
 def i_submit(name = "submit") return '<input type="submit" value="' + name + '">' end
 
