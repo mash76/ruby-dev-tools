@@ -62,8 +62,11 @@
         $('#f1').submit()
     })
 
-    // ESCで全フォームクリア
-    $("form input").keyup( (e) => { colorUsedTextBox() })
+    // checkboxをクリックしたらsubmit
+    $("form input[type=checkbox]").keyup( (e) => { $('#f1').submit() })
+
+    // textに値が入ったら青に
+    $("form input[type=text]").keyup( (e) => { colorUsedTextBox() })
 	  // escape でinputを全部クリア
     $(document).keydown( (e) => {
       if (e.which == 27) {
