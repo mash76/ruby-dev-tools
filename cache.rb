@@ -1,7 +1,11 @@
-p = $params
+class Cache
+    def main
+        p = $params
 
-out html_header("cache")
-out menu(__FILE__)
+        out html_header("cache")
+        out menu(__FILE__)
 
-# ----------------------------------------
-out `ls cache/* -R`.nl2br
+        # ----------------------------------------
+        out `ls cache/* -R`.nl2br
+    end
+end

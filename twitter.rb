@@ -1,43 +1,41 @@
-SQLITE_PATH = File.expand_path('files/twitter.sql3')
+class Twitter
 
+    SQLITE_PATH = File.expand_path('files/twitter.sql3')
 
+    def main
 
-def main
+        p = $params
+        out html_header("twitter")
+        out '<script>' + File.read("_form_events.js") + '</script>'
+        out menu(__FILE__)
 
-    p = $params
-    out html_header("twitter")
-    out '<script>' + File.read("_form_events.js") + '</script>'
-    out menu(__FILE__)
+        db = SQL3.connect_or_create(SQLITE_PATH,'')
+        out SQL3.info(SQLITE_PATH) + br
 
-	db = SQL3.connect_or_create(SQLITE_PATH,'')
-	out SQL3.info(SQLITE_PATH) + br
+        out "twitter manager"
 
-    out "twitter manager"
-
-    tweet
-end
-
-def tweet
-    # ツイート内容
-    tweet_text = "これはAPIからのテスト投稿です。"
-    uri = URI(TWEET_ENDPOINT)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    request = Net::HTTP::Post.new(uri.path, {
-    'Authorization' => "Bearer #{BEARER_TOKEN}",
-    'Content-Type' => 'application/json'
-    })
-
-    request.body = { text: tweet_text }.to_json
-    response = http.request(request)
-
-    if response.code.to_i == 201
-        out "ツイートが成功しました!"
-    else
-        out "エラー: #{response.code}"
-        out response.body
+        tweet
     end
 
-end
+    def tweet
+        # ツイート内容
+        tweet_text = "これはAPIからのテスト投稿です。"
+        uri = URI(TWEET_ENDPOINT)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true
+        request = Net::HTTP::Post.new(uri.path, {
+        'Authorization' => "Bearer #{BEARER_TOKEN}",
+        'Content-Type' => 'application/json'
+        })
 
-main
+        request.body = { text: tweet_text }.to_json
+        response = http.request(request)
+
+        if response.code.to_i == 201
+            out "ツイートが成功しました!"
+        else
+            out "エラー: #{response.code}"
+            out response.body
+        end
+    end
+end
