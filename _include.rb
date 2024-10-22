@@ -107,7 +107,12 @@ module ENC
   def self.html(path)
     return CGI.escapeHTML(path)
   end
-
+  def self.shell(path)
+    return Shellwords.escape(path)
+  end
+  def self.re(path)
+    return Regexp.escape(path)
+  end
 end
 
 
