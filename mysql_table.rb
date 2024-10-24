@@ -3,6 +3,7 @@ class Mysql_table
 
     def main()
         p = $params
+        connectMySQL()
         conns = $mysql_conns
 
         out html_header("table")

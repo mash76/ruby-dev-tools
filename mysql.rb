@@ -19,6 +19,7 @@ class Mysql
 
   def main
     p = $params
+    connectMySQL()
     conns = $mysql_conns
 
     db = SQL3.connect_or_create(SQLITE_PATH_MYSQL,create_tables)

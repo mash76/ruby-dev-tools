@@ -7,6 +7,7 @@ class Mysql_stats
         db = SQL3.connect_or_create(SQLITE_PATH_MYSQL,'') # todo
 
         p = params = $params
+        connectMySQL()
         conns = $mysql_conns
 
         $special_col_types = ["geometry","info"]
