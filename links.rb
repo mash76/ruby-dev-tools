@@ -312,13 +312,13 @@ class Links
 
                         # dir www app で色変える
                         link_name = row['name']
-                        link_name = sGreen(link_name) if row['href'].include?('docs.google.com/spreadsheets')
+                        link_name = sGreenBG(link_name) if row['href'].include?('docs.google.com/spreadsheets')
 
-                        link_name = sRed(link_name) if row['href'].include?('ajax=open')
-                        link_name = sOrange(link_name) if row['href'].include?('ajax=runapp')
-                        link_name = sBlue(link_name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
+                        link_name = sRedBG(link_name) if row['href'].include?('ajax=open')
+                        link_name = sOrangeBG(link_name) if row['href'].include?('ajax=runapp')
+                        link_name = sBlueBG(link_name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
 
-                        out '<a style="background:#f2f2ff;"
+                        out '<a
                                 onclick="addLinkCount(' + row["id"].to_s + ')"
                                 id="' + row['id'].to_s + '"
                                 last_use_date="' + Time.parse(row['last_use_date']).to_i.to_s + '"

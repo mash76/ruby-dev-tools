@@ -200,7 +200,8 @@ class Mysql_table
         html << i_hidden("order_by","")
         html << i_hidden("order_dir","")
 
-        col_infos[0].each do | key,value |
+        # ヘッダ
+        col_datatypes.each do |key,row|
             val = ""
             val = col_filters[key] if col_filters.key?(key)
             new_order_dir = (order_dir == 'asc') ? 'desc' : 'asc'
@@ -210,6 +211,7 @@ class Mysql_table
                     ")
             html << ' ' + ((order_dir == 'asc') ? '▲' : '▼') if key.to_s == order_by
             html << br
+            html << sSilver(row['DATA_TYPE']) + br
             html << i_text("col_filters[" + key + "]", val)
             html << '</th>'
         end
@@ -232,8 +234,8 @@ class Mysql_table
                 if col_filters.key?(key) && col_filters[key].length > 0
                     value = color_val(value,col_filters[key])
                 end
-                value = sRed("(geometry type)") if col_datatypes[key] == "geometry"
-                value = sRed("(blob type)") if col_datatypes[key] == "blob"
+                value = sRed("(geometry type)") if col_datatypes[key]['DATA_TYPE'] == "geometry"
+                value = sRed("(blob type)") if col_datatypes[key]['DATA_TYPE'] == "blob"
                 #value = value.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: '?') # おきかえ
                 html << '<td nowrap style="padding-left:6px;">' + value.to_s + '</td>'
             end
@@ -251,7 +253,7 @@ class Mysql_table
         FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA='" + con + "' AND TABLE_NAME='" + table + "' ", con,false)
         col_recs.each do |row|
-            ret[row["COLUMN_NAME"]] = row["DATA_TYPE"]
+            ret[row["COLUMN_NAME"]] = row
         end
         ret
     end

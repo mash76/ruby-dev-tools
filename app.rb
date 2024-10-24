@@ -2,12 +2,8 @@ require 'sinatra'
 require 'mysql2'
 require 'cgi'
 require 'concurrent-ruby'
-# require_relative '_info'
-# require_relative '_include'
-# require_relative 'grep'
-# require_relative 'git'
+
 Dir["./*.rb"].each do |file|
-  puts file.gsub('.rb','')
   require_relative file.gsub('.rb','')
 end
 
