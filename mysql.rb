@@ -1,8 +1,27 @@
 class Mysql
 
+  SQLITE_PATH_MYSQL = 'files/mysql.sql3'
+
+  def create_tables
+
+    " CREATE TABLE connections
+
+    "
+
+    "
+    CREATE TABLE key_values (
+        key	TEXT NOT NULL UNIQUE,
+        value	TEXT
+    );"
+
+
+  end
+
   def main
     p = $params
     conns = $mysql_conns
+
+    db = SQL3.connect_or_create(SQLITE_PATH_MYSQL,create_tables)
 
     out html_header("mysql")
     out '<script>' + File.read("_form_events.js") + '</script>'
@@ -11,6 +30,17 @@ class Mysql
     filter = p[:filter].to_s
     schemas = p['schemas'] || 'all'
 
+    out conns.length.to_s + sSilver(" schemas ")
+    conns.keys.each do |c|
+      out a_tag(same_red(c,schemas) , '?schemas=' + c) + spc
+    end
+    disp = (schemas == 'all') ? sRed('all') : 'all'
+    out spc + a_tag(disp , '?') + spc + br
+
+    # 接続を絞り込み
+    conns = { schemas => $mysql_conns[schemas] }  if schemas != 'all'
+
+
     out '<form method="get" >'
     out i_hidden("schemas",schemas)
     out i_text("filter",filter,20)
@@ -18,22 +48,11 @@ class Mysql
     out '</form>'
 
 
-
-    out conns.length.to_s + sSilver(" schemas ")
-    conns.keys.each do |c|
-      out a_tag(same_red(c,schemas) , '?schemas=' + c) + spc
-    end
-
-    out spc + a_tag('all', '?') + spc + br
-
-    conns = { schemas => $mysql_conns[schemas] }  if schemas != 'all'
-
-
     conns.keys.each do |con|
 
         filter_sqlite = filter.gsub(/_/,'@_') # sqlite3のエスケープ
 
-        out br + s150(sBlueBG(con)) + br
+        out s150(sBlueBG(con)) + br
         out sBG("TABLES") + spc
         sel = "SELECT
         TABLE_NAME,TABLE_COMMENT,	TABLE_TYPE	,ENGINE ,TABLE_ROWS,DATA_LENGTH,INDEX_LENGTH,AUTO_INCREMENT	,CREATE_TIME,TABLE_COLLATION

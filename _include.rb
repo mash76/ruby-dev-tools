@@ -4,6 +4,7 @@ require 'json'
 require 'uri'
 require 'erb'
 
+# 追加モジュール
 require 'sqlite3'
 require 'shellwords' # shell向けのエンコード
 require 'ostruct'  #動的なオブジェクト
@@ -401,22 +402,23 @@ def s_v_margin(v_pixels)
   return '<div style="height:' + v_pixels.to_s + 'px;">&nbsp;</div>'
 end
 
-def sPinkBG(str) return sBase('color:deeppink; background:#fee;',str) end
-def sRedBG(str) return sBase('color:red; background:#fee;',str) end
-def sGreenBG(str) return sBase('color:green; background:#efe;',str) end
-def sBlueBG(str) return sBase('color:blue; background:#eef;',str) end
-def sOrangeBG(str) return sBase('color:darkorange; background:#fee;',str) end
+def bg_style() return  'padding:2px; border-radius:2px;' end
+def sBG(str) return sBase('color:#444;background:#eee; ' + bg_style ,str) end
+def sPinkBG(str) return sBase('color:deeppink; background:#fee; ' + bg_style ,str) end
+def sRedBG(str) return sBase('color:red; background:#fee;  ' + bg_style ,str) end
+def sGreenBG(str) return sBase('color:green; background:#efe;  ' + bg_style ,str) end
+def sBlueBG(str) return sBase('color:blue; background:#eef;  ' + bg_style ,str) end
+def sOrangeBG(str) return sBase('color:darkorange; background:#fee;  ' + bg_style ,str) end
 
 def sRevRed(str) return sBase('color:white; background:red;',str) end
 def sRevPink(str) return sBase('color:white; background:deeppink;',str) end
 def sRevOrange(str) return sBase('color:white; background:darkorange;',str) end
 
-
 def s120(str) return sBase('font-size:120%;',str) end
 def s150(str) return sBase('font-size:150%;',str) end
 
 def sBold(str) return sBase('color:#444; font-weight:bold;',str) end
-def sBG(str) return sBase('color:#444;background:#eee;',str) end
+
 
 def br() return "<br/>" end
 def spc() return "&nbsp;" end

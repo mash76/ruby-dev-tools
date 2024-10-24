@@ -1,6 +1,11 @@
 class Mysql_stats
 
-        def main
+      SQLITE_PATH_MYSQL = 'files/mysql.sql3'
+
+    def main
+
+        db = SQL3.connect_or_create(SQLITE_PATH_MYSQL,'') # todo
+
         p = params = $params
         conns = $mysql_conns
 
