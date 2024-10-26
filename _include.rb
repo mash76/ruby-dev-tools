@@ -391,6 +391,7 @@ def sWhite(str) return sBase('color:white;',str) end
 def sSilver(str) return sBase('color:silver;',str) end
 def sBlue(str) return sBase('color:blue;',str) end
 def sGray(str) return sBase('color:gray;',str) end
+def sGray2(str) return sBase('color:#b0b0b0;' ,str) end
 def sRed(str) return sBase('color:red;',str) end
 def sCrimson(str) return sBase('color:crimson;',str) end
 def sPink(str) return sBase('color:deeppink;',str) end
@@ -404,6 +405,8 @@ end
 
 def bg_style() return  'padding:2px; border-radius:2px;' end
 def sBG(str) return sBase('color:#444;background:#eee; ' + bg_style ,str) end
+def sBeigeBG(str) return sBase('color:gray;background:#fbfbfb; ' + bg_style ,str) end
+def sSilverBG(str) return sBase('color:silver;background:#fbfbfb; ' + bg_style ,str) end
 def sPinkBG(str) return sBase('color:deeppink; background:#fee; ' + bg_style ,str) end
 def sRedBG(str) return sBase('color:red; background:#fee;  ' + bg_style ,str) end
 def sGreenBG(str) return sBase('color:green; background:#efe;  ' + bg_style ,str) end

@@ -10,7 +10,7 @@ class Git
     LIST_LOG_LIMIT = 30 # list画面でのログ表示件数
     GIT_SHOW_SHELL = false # シェルコマンド見せるか のスイッチ
     IMPORT_SIZE = false # 全件はfalse テスト用 impot
-    SQLITE_PATH_GIT = 'files/git.sql3'
+    SQLITE_PATH_GIT_GREP = 'files/git.sql3'
 
     def preview_form
 
@@ -18,12 +18,13 @@ class Git
                     font-size:70%;
                     position:fixed; top:20px;left:900px; width:600px; height:800px;
                     padding: 15px; background:#fff; border-radius:10px;
+                    border: 1px solid #d0d0d0;
                     opacity: 0.9;
                     vertical-align:top;
         "></div>
         <script>
             $(document).ready(function(){
-                $(document).on("mouseover", "a", function(event) {
+                $(document).on("mouseover", "a[preview]", function(event) {
                     event.preventDefault();
                     hash =  $(event.target).attr("hash")
                     repo =  $(event.target).attr("repo")
@@ -78,8 +79,8 @@ class Git
         out menu(__FILE__)
         # ----------------------------------------
 
-        db = SQL3.connect_or_create(SQLITE_PATH_GIT,create_tables)
-        out SQL3.info(SQLITE_PATH_GIT)
+        db = SQL3.connect_or_create(SQLITE_PATH_GIT_GREP,create_tables)
+        out SQL3.info(SQLITE_PATH_GIT_GREP)
         out br
 
         view = p[:view] || 'list'
@@ -189,7 +190,7 @@ class Git
                 row['date_'] = format_recent_date(row['date_'])
                 row['message'] = row['message'].trim(20)
                 #row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
-                row['message']= '<a repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
+                row['message']= '<a preview repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
 
 
                 row['author'] =row['author'].trim(15)
@@ -292,7 +293,7 @@ class Git
 
                     row['message'] =color_val(row['message'],filter) if filter.length > 0
                     #row['message'] = a_tag(row['message'], '?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo))
-                    row['message']= '<a repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
+                    row['message']= '<a preview repo="' + ENC.url(repo) + '" hash="' + row['hash'] + '" href="?view=repo&view2=commit_detail&hash=' + row['hash'] + '&repo=' + ENC.url(repo) + '" >' + row['message'] + '</a>' + spc
 
 
                     row['author'] = row['author'][0,15] # まず(フィルタなしでも)15文字に

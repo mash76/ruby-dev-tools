@@ -1,27 +1,80 @@
 
 class Grep
-    SQLITE_PATH_GREP = File.expand_path("files/grep.sql3")
+    SQLITE_PATH_GIT_GREP = File.expand_path("files/git.sql3")
     GREP_SHELL_SHOW = false
 
-    def create_tables
-        "CREATE TABLE key_values (
-            key	TEXT NOT NULL UNIQUE,
-            value	TEXT
-        );"
+    def preview_form
+
+        '<div id="diff_preview" style="
+                    font-size:70%;
+                    position:fixed; top:20px;left:900px; width:600px; height:800px;
+                    padding: 15px; background:#fff; border-radius:10px;
+                    border: 1px solid #d0d0d0;
+                    opacity: 0.9;
+                    vertical-align:top;
+        "></div>
+        <script>
+            $(document).ready(function(){
+                $(document).on("mouseover", "a[preview]", function(event) {
+                    event.preventDefault();
+                    r_path =  $(event.target).attr("r_path")
+                    repo =  $(event.target).attr("repo")
+                    url = "?ajax=preview&repo=" + repo + "&r_path=" + r_path
+                    $.get(url,(data)=> {
+                        console.log(data)
+                        $("#diff_preview").html(data)
+                    })
+                })
+                $(document).on("click", "div#diff_preview", function(event) {
+                    $("#diff_preview").hide()
+                })
+
+                $(window).resize(() => {
+                    moveWin()
+                })
+                function moveWin(){
+                    let width = $(window).width()
+                    $("#diff_preview").css("left",width - 620)
+                }
+                moveWin()
+            })
+        </script> '
+    end
+
+
+    def ajax_grep(p)
+        return unless p[:ajax]
+
+        if p[:ajax] == 'preview'
+            repo = p[:repo] || ''
+            r_path = p[:r_path] || ''
+            data = File.read(repo + r_path) ####
+            out '<pre>' + ENC.html(data) + '</pre>'
+            return true
+        end
+
     end
 
     def main
 
         p =  $params
+
+        ajax_result = ajax_grep(p)
+        return if ajax_result
+
         out html_header("grep")
         out '<script>' + File.read("_form_events.js") + '</script>'
         out menu(__FILE__)
         # ----------------------------------------
 
+        out preview_form
+
         path = p[:path] || GREP_PATHS[0]['path']
         path_id = 0
         GREP_PATHS.each_with_index do | hash,index |
-            out a_tag(File.basename(hash['path']) , "?path=" + ENC.url(hash['path'])) + spc
+            name = File.basename(hash['path'])
+            disp = (hash['path'] == path) ? sRed(name) : name
+            out a_tag(disp , "?path=" + ENC.url(hash['path'])) + spc
             path_id = index if hash['path'] == path
         end
         out br
@@ -32,7 +85,8 @@ class Grep
         days = p[:days] || ""
         fsize = p[:fsize] || ''
 
-        db = SQL3.connect_or_create(SQLITE_PATH_GREP,create_tables)
+        db = SQL3.connect_or_create(SQLITE_PATH_GIT_GREP,create_tables)
+
 
         ext_stat_hash = ext_stat(path,filter, exclude)
         ext_stat_hash.each do | key , val |
@@ -66,9 +120,18 @@ class Grep
         shell += ' -mtime -' + days if days.length > 0
         shell += ' -size ' + fsize + 'c ' if fsize.length > 0 # sizeを2回使用したら 上限下限できる
         filters = filter.strip.split(/\s+/)
+        names = []
         filters.each do |f|
-            shell += ' | grep -i "' + ENC.re(f) + '"' if f.length > 0
+          # names << ' -path "*' + ENC.re(f) + '*"' if f.length > 0 #フルパスに対して()
+           names << ' -name "*' + ENC.re(f) + '*"' if f.length > 0 # ファイル名のみに対して
         end
+        shell += names.join('  ')
+        shell += ' | sed s@' + ENC.re(path) + '@@g ' # rootパスまでを除去
+
+        filters.each do |f|
+            shell += ' | grep -i "' + ENC.re(f) + '"' if f.length > 0 # フルパスに対して
+        end
+
         excludes = exclude.strip.split(/\s+/)
         excludes.each do |e|
             shell += ' | grep -iv "' + ENC.re(e) + '"' if e.length > 0
@@ -88,16 +151,20 @@ class Grep
         ct = 1
         records = []
         files.each do |line|
-            stat = File.stat(line)
+            fullpath = path + line
+            stat = File.stat(fullpath)
+            dir = File.dirname(line)
             mtime = stat.mtime.strftime(TIME_FMT.YYYYMMDDHHIISS)
-            tirmed = line.gsub(path,"")
+            trimed = line
+            trimed = trimed.gsub(dir,sGray2(dir))
             filters.each do |f|
                 re = Regexp.new('(' + Regexp.escape(f) + ')',Regexp::IGNORECASE)
-                tirmed = tirmed.gsub(re,sRed('\1'))
+                trimed = trimed.gsub(re,sRed('\1'))
             end
-            size_str = (stat.size / 1024.0).round(1).to_s + sSilver('k')
-            records << { path: tirmed , mtime: sSilver(mtime), size: size_str}
-            ct += 1
+            size_str = (stat.size / 1024.0).ceil(1).to_s + sSilver('k')
+            atag = '<a preview repo="' + path + '" r_path="' + line + '" >' + trimed + '</a>'
+            records << {  mtime: sSilver(mtime), size: size_str , path: atag }
+             ct += 1
         end
         out hash2html(records)
 
@@ -160,5 +227,9 @@ class Grep
         end
         stat = stat.sort_by { |key, value| -1 * value }.to_h
         stat
+    end
+
+    def create_tables
+
     end
 end
