@@ -4,17 +4,10 @@ class Mysql
 
   def create_tables
 
-    " CREATE TABLE connections
-
-    "
-
-    "
-    CREATE TABLE key_values (
+    "CREATE TABLE key_values (
         key	TEXT NOT NULL UNIQUE,
         value	TEXT
     );"
-
-
   end
 
   def main
@@ -22,7 +15,7 @@ class Mysql
     connectMysql()
     conns = $mysql_conns
 
-    db = SQL3.connect_or_create(SQLITE_PATH_MYSQL,create_tables)
+    db = SQL3.connect_or_create( SQLITE_PATH_MYSQL , create_tables )
 
     out html_header("mysql")
     out '<script>' + File.read("_form_events.js") + '</script>'

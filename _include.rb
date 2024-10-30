@@ -3,6 +3,7 @@ require 'net/http'
 require 'json'
 require 'uri'
 require 'erb'
+require 'open3'
 
 # 追加モジュール
 require 'sqlite3'
@@ -457,10 +458,10 @@ def ajax_common(p)
 end
 
 def run_shell(shell,trim_len = 30)
-  ret = `#{shell} 2>&1 `
-  puts 'shell: ' + shell
-  out sSilver(shell.trim_spreadable(trim_len)) << spc << ret.split_nl.length.to_s if trim_len != NO_DISP
-  ret
+  stdout, stderr, status = Open3.capture3(shell)
+  out sSilver(shell.trim_spreadable(trim_len)) << spc << stdout.split_nl.length.to_s if trim_len != NO_DISP
+  out br + sRed(stderr) unless status.success?
+  stdout
 end
 
 def array2hash(array,names_ary)

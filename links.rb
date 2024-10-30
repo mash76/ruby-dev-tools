@@ -319,7 +319,7 @@ class Links
                         link_name = sBlueBG(link_name) if row['href'].include?('localhost:') or row['href'].include?('0.0.0.0:')
 
                         out '<a
-                                onclick="addLinkCount(' + row["id"].to_s + ')"
+                                onclick="openUrl(' + row["id"].to_s + ')"
                                 id="' + row['id'].to_s + '"
                                 last_use_date="' + Time.parse(row['last_use_date']).to_i.to_s + '"
                                 title="' + row['shortcut'] + '"

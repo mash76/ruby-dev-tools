@@ -9,11 +9,12 @@ class Docker
         out menu(__FILE__)
         # ----------------------------------------
         id = p[:id] || ''
-        out br + sBG("docker ps ")
+        out br + sBG("containers") + spc
 
         # 全項目 json . 指定項目 json .ID
         shell = "docker ps --format '{{ .ID}}\t{{ .Names}}\t{{ .Image}}\t{{ .State}}\t{{ .Ports}}\t{{ .RunningFor}}\t{{ .CreatedAt}}' "
-        containers_str = run_shell(shell)
+        containers_str = run_shell(shell,150)
+
         lines = containers_str.split_nl
         containers = lines.map { |line | array2hash(line.split_tab,["ID","Names","Image","Satte","Ports","RunningFor","CreatedAt"] )}
 
@@ -33,7 +34,7 @@ class Docker
         # コンテナ内ファイル
         out sBlueBG(now_container["Names"]) + spc + sBlueBG(now_container["Image"] ) + br
         shell = " docker inspect " + now_container['ID']
-        inspect_str = run_shell shell
+        inspect_str = run_shell(shell,200)
         #out inspect_str + br
         c_inspect_hash = JSON.parse(inspect_str)
         c_inspect_hash.each do | inspect_h |

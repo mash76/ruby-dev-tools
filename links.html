@@ -207,9 +207,7 @@
     function eventClick(){
         $("a[sc]").click( (e) => {
             event.preventDefault();  // デフォルトのリンク遷移を一時的に無効化
-            ST.drag_id = $(e.target).attr("id")
-            ajaxCountUp(ST.drag_id)
-            window.location.href = $(e.target).attr("href")
+            openUrl($(e.target).attr("id"))
         })
     }
 
